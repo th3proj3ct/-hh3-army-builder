@@ -204,6 +204,8 @@ export type PrimeEffect =
 export interface PrimeAdvantageDef {
   id: string;
   name: string;
+  /** One-line plain-language summary shown next to the name (paraphrased, not rules text). */
+  summary?: string;
   effect: PrimeEffect;
   /** Only selectable for prime slots of these roles. */
   slotRoles?: BattlefieldRole[];

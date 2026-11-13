@@ -231,6 +231,7 @@ function importUnit(link: Node, catalogueName: string, role: BattlefieldRole, fa
     note(unit.name, `extra models cost different amounts (${variable.map((v) => `${v.node.name} ${v.cost}`).join(', ')}); ${perExtra} per extra model used`);
   if (hasCostModifier(unit)) note(unit.name, 'unit cost changes under some conditions; base used');
   const id = slug(unit.name);
+  if (!datasheets[id]) datasheets[id] = datasheetFor(unit, models);
   const tags = [...new Set(models.flatMap((m) => modelTagsOf(m.node)))];
   return {
     id,
@@ -246,6 +247,96 @@ function importUnit(link: Node, catalogueName: string, role: BattlefieldRole, fa
     source: { book: 'BSData horus-heresy-3rd-edition', version: sha, section: `${catalogueName.trim()} › ${unit.name}` },
   };
 }
+
+// ── datasheets (display only; the validator never reads these) ─────────────
+export interface Datasheet {
+  models: { name: string; min: number; max: number; profile: Record<string, string> }[];
+  wargear: { model: string; items: string[] }[];
+  weapons: { name: string; kind: 'Ranged' | 'Melee'; stats: Record<string, string> }[];
+  rules: { name: string; summary: string }[];
+  traits: string[];
+}
+const chars = (p: Node): Record<string, string> =>
+  Object.fromEntries((p.characteristics ?? []).map((c: Node) => [String(c.name), String(c.$text ?? '')]));
+const profilesOf = (n: Node): Node[] => [
+  ...(n.profiles ?? []),
+  ...(n.infoLinks ?? []).filter((l: Node) => l.type === 'profile').map((l: Node) => byId.get(l.targetId)).filter(Boolean),
+];
+const ruleSummary = (r: Node | undefined): string => {
+  // BSData rule text usually opens with a one-line summary in quotes; keep just that.
+  const d = String(r?.description ?? '').trim().replace(/^["“]/, '');
+  const close = d.search(/["”]/); // closing quote of the summary, with or without a full stop
+  const first = (close >= 0 ? d.slice(0, close) : d.split(/(?<=\.)\s/)[0]!).replace(/\s+/g, ' ').trim().replace(/([^.!?:])$/, '$1.');
+  return first.length > 220 ? `${first.slice(0, 217)}…` : first;
+};
+
+function datasheetFor(unit: Node, models: ModelInfo[]): Datasheet {
+  const weapons = new Map<string, Datasheet['weapons'][number]>();
+  const rules = new Map<string, string>();
+  const traits = new Set<string>();
+  const seen = new Set<Node>();
+  const visit = (n: Node, depth: number) => {
+    if (seen.has(n) || depth > 8) return;
+    seen.add(n);
+    for (const p of profilesOf(n)) {
+      if (p.typeName === 'Ranged Weapon' || p.typeName === 'Melee Weapon')
+        weapons.set(p.name, { name: p.name, kind: p.typeName === 'Ranged Weapon' ? 'Ranged' : 'Melee', stats: chars(p) });
+    }
+    for (const { node } of children(n)) if (!isHidden(node) && node.type !== 'model' && node.name !== 'Prime Unit') visit(node, depth + 1);
+  };
+  const unitLevelRules = (n: Node) => {
+    for (const l of n.infoLinks ?? []) {
+      const t = byId.get(l.targetId);
+      if (l.type === 'rule') rules.set(l.name, ruleSummary(t));
+      if (l.type === 'profile' && t?.typeName === 'Traits') traits.add(l.name);
+    }
+    for (const r of n.rules ?? []) rules.set(r.name, ruleSummary(r));
+  };
+  unitLevelRules(unit);
+  // Default kit: free fixed entries plus each exchange group's default (or first free) choice.
+  const defaultKit = (start: Node): string[] => {
+    const items: string[] = [];
+    const walk = (n: Node) => {
+      for (const { node, group } of children(n)) {
+        if (isHidden(node) || node.name === 'Prime Unit' || node.type === 'model' || /Detachment|Witchblood/.test(node.name)) continue;
+        if (group) {
+          const opts = leaves(node);
+          const required = (parentLimit(node, 'min') ?? 0) >= 1;
+          const def = opts.find((x) => x.id === node.defaultSelectionEntryId) ?? (required ? opts.find((x) => cost(x) === 0) : undefined);
+          if (def) items.push(def.name);
+          else if (!required) walk(node);
+        } else if (cost(node) === 0 && (parentLimit(node, 'min') ?? 0) >= 1) items.push(node.name);
+        else if (cost(node) === 0 && !parentLimit(node, 'max') && profilesOf(node).some((p) => /Weapon/.test(p.typeName))) items.push(node.name);
+      }
+    };
+    walk(start);
+    return [...new Set(items)];
+  };
+  const wargear: Datasheet['wargear'] = [];
+  for (const m of models) {
+    unitLevelRules(m.node);
+    visit(m.node, 0);
+    wargear.push({ model: m.node.name, items: defaultKit(m.node) });
+  }
+  // Kit carried on the unit entry itself (e.g. Primarchs' named weapons).
+  const unitKit = defaultKit(unit);
+  if (unitKit.length) {
+    if (models.length === 1) wargear[0]!.items = [...new Set([...wargear[0]!.items, ...unitKit])];
+    else wargear.push({ model: 'Unit', items: unitKit });
+  }
+  visit(unit, 0);
+  return {
+    models: models.map((m) => {
+      const prof = profilesOf(m.node).find((p) => p.typeName === 'Profile') ?? profilesOf(m.node)[0];
+      return { name: m.node.name, min: m.min, max: m.max, profile: prof ? chars(prof) : {} };
+    }),
+    wargear,
+    weapons: [...weapons.values()].sort((a, b) => a.kind.localeCompare(b.kind) || a.name.localeCompare(b.name)),
+    rules: [...rules.entries()].map(([name, summary]) => ({ name, summary })).sort((a, b) => a.name.localeCompare(b.name)),
+    traits: [...traits],
+  };
+}
+const datasheets: Record<string, Datasheet> = {};
 
 // ── run ─────────────────────────────────────────────────────────────────────
 const units = new Map<string, UnitDef>();
@@ -279,7 +370,11 @@ for (const file of catalogueFiles) {
 const outDir = join(import.meta.dirname, '..', 'data', 'bsdata');
 mkdirSync(outDir, { recursive: true });
 const sorted = [...units.values()].sort((a, b) => a.name.localeCompare(b.name));
-writeFileSync(join(outDir, 'units.json'), JSON.stringify({ source: 'https://github.com/BSData/horus-heresy-3rd-edition', commit: sha, catalogues: catalogueFiles, units: sorted }, null, 2) + '\n');
+writeFileSync(
+  join(outDir, 'datasheets.json'),
+  JSON.stringify({ commit: sha, datasheets: Object.fromEntries(sorted.map((u) => [u.id, datasheets[u.id]])) }) + '\n',
+);
+writeFileSync(join(outDir, 'units.json'),JSON.stringify({ source: 'https://github.com/BSData/horus-heresy-3rd-edition', commit: sha, catalogues: catalogueFiles, units: sorted }, null, 2) + '\n');
 
 const lines = [
   '# BSData import report',

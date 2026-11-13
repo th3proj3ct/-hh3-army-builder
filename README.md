@@ -20,6 +20,28 @@ npm run typecheck
 | [docs/UI-SPEC.md](docs/UI-SPEC.md) | UI spec built around explanation |
 | [docs/TEST-PLAN.md](docs/TEST-PLAN.md) | Outside checks, think-aloud study, errata drill |
 
+## UI (first cut)
+
+```
+npm run dev      # http://localhost:5178
+```
+
+It opens on the legal 3,000 pt Death Guard sample. "New list" starts empty, and "Death Guard sample" reloads the sample.
+
+- Click a slot to fill it. Units you can't take stay in the list, each with the reason. Other Legions' units are tucked under a fold.
+- Filled Command and High Command slots show "+ Unlock a detachment". The picker lists every Apex and Auxiliary detachment, with a reason on each locked one.
+- Unlocked detachments are drawn nested under the slot that unlocked them.
+- The points bar is sticky. It shows total, Allied and Warlord + Lord of War meters, plus a problems list with "Show me" links.
+- Prime Advantage picker. Each option has a one-line summary, and a "What do the Prime Advantages do?" list. Logistical Benefit adds an extra slot whose role you choose.
+- The unlock picker shows example units for each slot role, inline and on hover. "What fits these slots?" lists every eligible unit, with its datasheet.
+- **Datasheets** (eye icon) on filled slots, picker rows, "what fits" lists and the reference view. They show model stats, default wargear, weapon profiles, special rules with one-line summaries, options taken, and every detachment the unit fits. They're imported from BSData into `data/bsdata/datasheets.json` and loaded on first use.
+- **Unit reference** tab. Every unit is grouped by role (High Command, Command, Troops, …) in collapsible sections, with a search box and a Legion filter. Each row lists the detachments it can go in, including Special Assignment and "Death Guard only" style limits.
+- Model count stepper and a basic wargear editor using the imported options.
+- Undo/redo (Ctrl+Z / Ctrl+Shift+Z) and Export JSON. The list is remembered in localStorage.
+- On phones the details panel is a bottom sheet.
+
+Every lock reason comes from `explainChange()`, so the UI has no rules logic of its own. Code is in `ui/src/`.
+
 ## Real data (BSData import)
 
 Unit profiles and points come from the [BSData Horus Heresy 3rd edition repo](https://github.com/BSData/horus-heresy-3rd-edition) (NewRecruit JSON). Rules stay hand-entered in `src/core-data.ts`; only units are imported.

@@ -215,7 +215,7 @@ export const DEATH_GUARD_DETACHMENTS: DetachmentDef[] = [
 export const DEATH_GUARD_PRIME_ADVANTAGES: PrimeAdvantageDef[] = [
   {
     id: 'unnatural-resilience',
-    name: 'Unnatural Resilience',
+    name: 'Unnatural Resilience', summary: 'Death Guard Centurion only: +1 Wounds and Eternal Warrior (2). Once per army.',
     effect: { kind: 'modelBuff' },
     oncePer: 'army',
     allowedForUnique: false,
@@ -227,13 +227,13 @@ export const DEATH_GUARD_PRIME_ADVANTAGES: PrimeAdvantageDef[] = [
 ];
 
 export const CORE_PRIME_ADVANTAGES: PrimeAdvantageDef[] = [
-  { id: 'master-sergeant', name: 'Master Sergeant', effect: { kind: 'modelBuff' }, oncePer: 'detachment', allowedForUnique: false, source: src('Prime Slots › Core Prime Traits') },
-  { id: 'combat-veterans', name: 'Combat Veterans', effect: { kind: 'modelBuff' }, allowedForUnique: false, source: src('Prime Slots › Core Prime Traits') },
-  { id: 'paragon-of-battle', name: 'Paragon of Battle', effect: { kind: 'modelBuff' }, allowedForUnique: false, source: src('Prime Slots › Core Prime Traits') },
-  { id: 'special-assignment', name: 'Special Assignment', effect: { kind: 'specialAssignment' }, slotRoles: ['Command'], allowedForUnique: true, source: src('Prime Slots › Core Prime Traits') },
+  { id: 'master-sergeant', name: 'Master Sergeant', summary: 'One Sergeant gets +1 A, WS and LD and becomes a Champion. Once per detachment.', effect: { kind: 'modelBuff' }, oncePer: 'detachment', allowedForUnique: false, source: src('Prime Slots › Core Prime Traits') },
+  { id: 'combat-veterans', name: 'Combat Veterans', summary: 'Every model in the unit gets +1 LD, CL, IN and WP (max 10).', effect: { kind: 'modelBuff' }, allowedForUnique: false, source: src('Prime Slots › Core Prime Traits') },
+  { id: 'paragon-of-battle', name: 'Paragon of Battle', summary: 'One Command model in the unit gets +1 A, WS and BS.', effect: { kind: 'modelBuff' }, allowedForUnique: false, source: src('Prime Slots › Core Prime Traits') },
+  { id: 'special-assignment', name: 'Special Assignment', summary: 'Command slots only: a High Command unit may fill this slot, but it then unlocks no detachments.', effect: { kind: 'specialAssignment' }, slotRoles: ['Command'], allowedForUnique: true, source: src('Prime Slots › Core Prime Traits') },
   {
     id: 'logistical-benefit',
-    name: 'Logistical Benefit',
+    name: 'Logistical Benefit', summary: 'Adds one slot to this detachment (not High Command, Command, Warlord or Lord of War). Once per detachment.',
     effect: { kind: 'addSlot', excludedRoles: ['HighCommand', 'Command', 'Warlord', 'LordOfWar'] },
     oncePer: 'detachment',
     allowedForUnique: true,
@@ -244,7 +244,7 @@ export const CORE_PRIME_ADVANTAGES: PrimeAdvantageDef[] = [
 export const ASTARTES_PRIME_ADVANTAGES: PrimeAdvantageDef[] = [
   {
     id: 'true-believers',
-    name: 'True Believers',
+    name: 'True Believers', summary: 'Traitor, non-Vehicle Legion units only: every model gains the Malefic Sub-Type.',
     effect: { kind: 'modelBuff' },
     allegiance: 'Traitor',
     allowedForUnique: false,
@@ -253,7 +253,7 @@ export const ASTARTES_PRIME_ADVANTAGES: PrimeAdvantageDef[] = [
   },
   {
     id: 'iron-hands-war-engine',
-    name: 'Iron Hands Command Prime (extra War-engine slot)',
+    name: 'Iron Hands Command Prime (extra War-engine slot)', summary: 'Adds one War-engine slot to this detachment; the unit in it becomes a Champion. Once per army.',
     effect: { kind: 'addSlot', allowedRoles: ['WarEngine'] },
     oncePer: 'army',
     allowedForUnique: false,

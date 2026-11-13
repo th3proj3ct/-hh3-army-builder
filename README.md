@@ -1,0 +1,50 @@
+# HH3 army builder: rules core (pre-UI)
+
+A pure TypeScript rules model and validator for Horus Heresy 3rd edition army building. It comes with golden tests, property tests and an errata drill. No UI yet.
+
+```
+npm install
+npm test         # 67 tests: golden lists, fast-check points properties, errata drill
+npm run typecheck
+```
+
+| File | What |
+|---|---|
+| [src/model.ts](src/model.ts) | Type model: catalog (detachments, slots, units, wargear, Prime Advantages, army lists) and roster |
+| [src/rules.ts](src/rules.ts) | Every enforced rule: ID, title, source section, status (confirmed / ambiguous / unconfirmed) |
+| [src/core-data.ts](src/core-data.ts) | Core FOC slot layouts, Prime Advantages, caps, plus sample Legion detachments |
+| [src/validate.ts](src/validate.ts) | `validate(roster, catalog) → { legal, errors, warnings, totals }` |
+| [src/explain.ts](src/explain.ts) | `explainChange()`: the reason for every locked slot/unit, taken from the validator |
+| [src/errata.ts](src/errata.ts) | Errata as JSON patches |
+| [docs/RULES.md](docs/RULES.md) | Rule list with sources, ambiguities, unconfirmed items |
+| [docs/UI-SPEC.md](docs/UI-SPEC.md) | UI spec built around explanation |
+| [docs/TEST-PLAN.md](docs/TEST-PLAN.md) | Outside checks, think-aloud study, errata drill |
+
+## Critique of the original plan
+
+1. **Prime slots are missing from the plan, and they are core to HH3 list building.** Primary, Allied and several Apex/Legion detachments have Prime slots. Prime Advantages can add slots (Logistical Benefit, plus Iron Hands, Ultramarines, Alpha Legion and Shattered Legions variants). One of them, Special Assignment, lets a High Command unit sit in a Command slot that then *unlocks nothing*. That last one is precisely the kind of thing that confuses new players about unlocking. These are modelled and tested here.
+2. **"Primary, Auxiliary, Apex, and any others" undersells the structure.** There are six core kinds (Primary, Auxiliary, Apex, Allied, Lord of War, Warlord). On top of those, Legion detachments are gated four different ways: by Primary Faction, by "army includes X", by a *specific unit in the Command slot* ("instead of" the normal choice), or by *replacing* a core detachment (Brotherhood of the Phoenix replaces the Warlord Detachment). Unlocking is a **graph**: slots unlock detachments, Apex slots unlock more, Allied slots unlock their own Auxiliaries. So rosters store **explicit links** (`unlockedBy`). That lets the validator say "Command slot 1 is already unlocking Armoured Support", and lets the UI draw the line. Without links you'd need a matching solver *and* you'd lose the explanation.
+3. **"Units that don't take a slot" and "options that change a unit's role" look like 2nd-edition ideas.** HH3 says every selected unit fills a slot, and its designer's note says Dedicated Transports and commander-attached Retinues are gone. I found no example of either in what I read. Both are typed as hooks but neither is built into the UI. Don't build UI for them until someone finds a source.
+4. **`validate(list)` can't be pure without its data.** The signature is `validate(roster, catalog)`. Errors and **warnings** are separate (the 2,000–4,000 band and data-version drift are advisory). The result includes totals so the points bar and the verdict can't disagree.
+5. **"Names the rule in plain language" isn't enough on its own.** Each error also carries a stable `ruleId` and the source section. Tests assert IDs, not prose, so wording can improve without breaking them, and players can open the book at the right page in a dispute. Locked-slot reasons in the UI come from the same validator (`explainChange`), so the UI isn't a second rules engine.
+6. **Golden tests shouldn't depend on real points.** They'd break at every points update, and real points may not be yours to redistribute. Engine tests here use fixture points. Real data gets separate snapshot tests (TEST-PLAN §2a).
+7. **Tournament-checked lists and another builder's totals aren't ground truth.** TOs miss things and other builders have stale data. Plan to sort each disagreement into *our bug / their miss / ambiguous*, comparing per unit, not just totals (TEST-PLAN §2).
+8. **5 think-aloud users is right for finding problems, wrong for timing statistics.** Time-to-legal also rewards guessing. Report per-person and median times, and add an **explain-back** task ("why are you allowed this Auxiliary?"), because understanding unlocking is the actual goal (TEST-PLAN §3).
+9. **"Rule changes are data-only" can't be completely true.** Points, slots, roles, caps, restrictions and new detachments built from existing requirement kinds *are* data (the drill proves it). A new *kind* of rule needs code. The honest version: those kinds live in a closed union, and an unknown kind **fails loudly** (`DATA-UNKNOWN`) instead of being silently skipped (tested).
+10. **Unaddressed risk: where real unit and points data come from.** Wahapedia is a lookup aid. Copying its text and points into a product raises licensing questions. Store section references, not rules text, and decide the data source (hand entry from owned books, or a community data set with a clear licence) before building the UI. Pin a catalog version on every saved list (`catalogVersion`).
+
+## Rules I couldn't confirm from the source
+
+See [docs/RULES.md](docs/RULES.md) for the full list. Short version:
+
+- **Units that take no slot:** none found. Hook only.
+- **Options that change Battlefield Role:** none found. Hook only (`setRole`).
+- **Retinue units needing a commander:** no list-building rule found. Not enforced.
+- **Apothecarion Delegation / Techmarine Covenant unlock condition:** missing on Wahapedia. Encoded as normal Auxiliaries.
+- **25% Warlord/Lord of War cap:** sources disagree on what counts, and on ≤ vs <. My reading is flagged.
+- **Lord of War Detachment "same Army List *or* Faction":** read as one army list.
+- **Whether Auxiliary-detachment Command slots unlock further detachments:** read as no (moot for core).
+- **Rite of War vs Primary Faction gating for Legion Additional Detachments:** both supported. Sample data uses Primary Faction.
+- **Legion vs Legion allies (e.g. Blood Angels Primary + Dark Angels Allied):** treated as different Factions, so legal. Not confirmed in an FAQ.
+- **Slot layouts for untitled Legion detachments:** inferred from HTML order.
+- **Everything outside what I read:** printed books, Warhammer Community errata PDFs, other factions' lists, unit datasheets and real points. **None of it was checked.**

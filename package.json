@@ -1,0 +1,17 @@
+{
+  "name": "hh3-army-builder",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Rules model, validator and tests for a Horus Heresy 3.0 army builder (pre-UI).",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "fast-check": "^3.23.2",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
+  }
+}

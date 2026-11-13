@@ -1,0 +1,105 @@
+# Encoded rules
+
+Source of truth for IDs is [`src/rules.ts`](../src/rules.ts); this page explains them.
+
+**What I read (13 Nov 2026):** the Wahapedia page *Battles in the Age of Darkness* (says it's the Age of Darkness Rulebook v1.2, Oct 2026), the Wahapedia HH3 FAQ page, and only the army-building sections of the Wahapedia Legiones Astartes page (Liber Astartes / Hereticus v1.1). I took the detachment slot layouts from the page's HTML chart. Every slot has a "X Slot" / "X Prime Slot" tooltip. I did **not** read the printed books, any Warhammer Community PDF, other factions' army lists, or any unit datasheets.
+
+Status key: ✅ confirmed as written · ⚠️ ambiguous (reading chosen, flagged) · ❓ not found (hook only)
+
+## Army-wide
+
+| ID | Rule | Source section | Status |
+|---|---|---|---|
+| ARMY-POINTS | Total ≤ points limit | Crusade Army Selection › 1 & 6 | ✅ |
+| ARMY-POINTS-BAND | <2,000 or >4,000 is "outside intended scope". This is a **warning**, not an error | Crusade Army Selection › 1 | ✅ |
+| ARMY-MISSION-LIMIT | Core Missions use 3,000 pts | Core Mission Pack › 2. Select Armies | ✅ |
+| ARMY-ONE-PRIMARY | Exactly one Primary Detachment | Detachment Types › Primary | ✅ |
+| ARMY-DETACHMENT-NOT-EMPTY | Every detachment has ≥1 unit | Crusade Army Selection › 6 | ✅ |
+| ARMY-ALLEGIANCE | Units match army Allegiance; `[Allegiance]` units take it | Crusade Army Selection › 3 | ✅ |
+| ARMY-RITE-OF-WAR | Each Legion Faction trait used picks a Rite of War | Liber Astartes › Building a Space Marine Army | ✅ |
+| ARMY-RITE-SCOPE | Additional Detachments only from the selected Rite | FAQ (Rites of War) | ⚠️ |
+
+## Slots & units
+
+| ID | Rule | Source | Status |
+|---|---|---|---|
+| SLOT-ROLE-MATCH | Unit role = slot role | Selecting Units for Detachments | ✅ |
+| SLOT-ONE-UNIT / SLOT-EXISTS | One unit per slot; only existing slots | Selecting Units for Detachments | ✅ |
+| SLOT-RESTRICTION | Detachment-specific "only X units" slots, Linebreaker word choice | Liber Astartes detachments | ✅ |
+| SLOT-RESTRICTION-EXTRA | Restrictions also bind slots added by Logistical Benefit | FAQ | ✅ |
+| UNIT-ARMY-LIST | Unit's list = detachment's list (or slot override, e.g. Daemonic Manifestation) | Crusade Army Selection › 3 | ✅ |
+| UNIT-MODEL-COUNT | Size within profile min/max | Selecting Units | ✅ |
+| UNIT-FACTION-TRAIT | `[Legiones Astartes]` → choose one Legion; fixed traits can't change | Liber Astartes | ✅ |
+| DET-SINGLE-FACTION | One Faction trait per detachment unless a rule says otherwise | Liber Astartes | ✅ |
+
+## Detachments and unlocking
+
+| ID | Rule | Source | Status |
+|---|---|---|---|
+| DET-UNLOCK-REQUIRED | Apex/Aux need a *filled* Command/HC slot | Adding Detachments to an Army | ✅ |
+| DET-UNLOCK-HC | HC slot → one Apex **or** one Aux | Apex Detachments | ✅ |
+| DET-UNLOCK-CMD | Command slot → one Aux, never Apex | Primary Detachments | ✅ |
+| DET-UNLOCK-ONE | One detachment per slot | Primary Detachments | ✅ |
+| DET-UNLOCK-SOURCE | Only Primary, Apex, Allied slots unlock | Primary/Apex/Allied | ⚠️ |
+| DET-UNLOCK-ALLIED | Allied unlocks Aux only, linked to the Allied | Allied Detachments | ✅ |
+| DET-UNLOCK-CYCLE | Unlock chain must reach Primary/Allied | Apex Detachments (implied) | ⚠️ |
+| DET-UNLOCK-SPECIFIC | "When an X fills a Command slot… add Y *instead of* the FOC options" | Liber Astartes Aux Detachments | ✅ |
+| DET-LINKED-LIST | Apex/Aux use the linked detachment's army list | Primary Detachments | ✅ |
+| DET-MAX-LOW | ≤1 Lord of War Detachment | Lord of War Detachments | ✅ |
+| DET-MAX-WARLORD | ≤1 Warlord Detachment or replacement (Brotherhood of the Phoenix) | Warlord Detachments; EC Additional Detachment | ✅ |
+| DET-REQUIREMENT | Data-driven prereqs: min points, allegiance, Primary Faction, "army includes X", "detachment includes X" | Per-Legion Additional Detachments | ✅ |
+| DET-LOW-SINGLE-LIST | LoW Detachment units from one list | Lord of War Detachments | ⚠️ |
+
+## Allied, Warlord, Lord of War
+
+| ID | Rule | Source | Status |
+|---|---|---|---|
+| ALLIED-FACTION | Allied ≠ Primary Faction | Allied Detachments | ✅ |
+| ALLIED-FACTION-TRAITS | Allied shares *no* Faction trait with Primary (Mechanicum variants) | FAQ | ✅ |
+| ALLIED-CAP | Allied + their linked detachments ≤ ceil(50%) | Allied Detachments + FAQ | ✅ |
+| WARLORD-MIN-LIMIT | Warlord Detachment / Warlord units need ≥3,000 | Warlord Detachments; Warlords and Lords of War | ✅ |
+| WARLORD-SAME-LIST | Warlord Detachment = Primary list & Faction | Warlord Detachments | ✅ |
+| WARLORD-PARAGON | Warlord Detachment includes a Paragon | Warlord Detachments | ✅ |
+| LOW-CAP | Shared 25% allowance, rounded up | Warlords and Lords of War | ⚠️ |
+
+## Prime slots
+
+| ID | Rule | Source | Status |
+|---|---|---|---|
+| PRIME-ONLY-ON-PRIME | Advantages only on filled Prime slots, one each | Prime Slots | ✅ |
+| PRIME-UNIQUE | Unique → only Special Assignment / Logistical Benefit | Prime Slots | ✅ |
+| PRIME-ONCE | Master Sergeant & Logistical Benefit once per detachment; some Legion ones once per army | Core Prime Traits; Legion Primes | ✅ |
+| PRIME-SLOT-ROLE | Special Assignment on Command slots only | Core Prime Traits | ✅ |
+| PRIME-SPECIAL-ASSIGNMENT | HC unit may fill that Command slot; slot unlocks nothing | Core Prime Traits | ✅ |
+| PRIME-EXTRA-SLOT | Added slot can't be HC/Command/Warlord/LoW (or Legion-specific roles) | Logistical Benefit; Legion Primes | ✅ |
+| PRIME-ELIGIBILITY | Legion Prime requirements (role, Faction, list, no Vehicles…) | Liber Astartes | ✅ |
+| PRIME-DET-ALLOWED | Detachment limits Advantages (Atramentar Hunt, Exalted Conclave) | Liber Astartes | ✅ |
+| PRIME-BARRED-UNIT | Inductii never take Prime Advantages | Legacies: Inductii | ✅ |
+
+## Wargear (validated now; editor later)
+
+| ID | Rule | Status |
+|---|---|---|
+| OPT-EXISTS, OPT-MAX, OPT-GROUP, OPT-REQUIRES | Options belong to the profile; per-unit/per-model caps; exchanges share a pool | ✅ general shape. Datasheet wording varies, so check each profile as it's entered |
+| OPT-GATED | Allegiance- or Legion-armoury-only options | ✅ |
+| OPT-DECURION-ONE | ≤1 Legiones Decurion per unit | ✅ |
+
+## Ambiguities: the reading I chose
+
+1. **LOW-CAP: what counts, and ≤ or <.** The Lord of War Detachment section counts the *whole LoW Detachment* plus Warlord-role units. The Warlord Detachment section counts *Warlord-role units* plus LoW-role units elsewhere. The summary box says all Warlord or LoW **role** units. One sentence about armies under 3,000 points says "less than 25%"; everywhere else it's "no more than". **Encoded:** LoW Detachment units + Warlord/LoW-role units anywhere, ≤ ceil(25%). Retinue and Heavy Transport units in a Warlord Detachment are **not** counted.
+2. **LoW Detachment "same Army List or Faction".** Encoded as one army list.
+3. **Which detachments' slots unlock others.** The FOC summary says Command/HC slots filled "in any Detachment" count. The per-type rules only give unlocks to Primary, Apex and Allied. No core Auxiliary has Command slots, so this only matters for future detachments.
+4. **Apothecarion Delegation / Techmarine Covenant unlock condition.** Wahapedia shows each one's slot restriction but no "When an X Unit is selected…" sentence, unlike the other Legion Auxiliaries. Encoded as a normal Auxiliary. **Check the printed Liber.**
+5. **Rites of War vs Additional Detachments.** Wahapedia shows Legion Additional Detachments gated by *Primary Faction*. The FAQ says Additional Detachments can't be used "from Rites of War other than the ones selected". The data model supports both gates (`primaryFaction`, `riteOfWar`). The sample data uses only `primaryFaction`.
+6. **Allied Faction for Legions.** Encoded as: Faction = Legion trait, so a Blood Angels Primary may ally Dark Angels. That follows from "Faction is determined by the Army List… and Legion Rules", but I haven't seen it confirmed in an FAQ.
+7. **Unlock loops** aren't addressed in the text. I reject them because Apex/Aux must be "linked to the Primary Detachment".
+8. **Slot layouts are inferred from HTML.** Some Legion detachments have no title in the chart markup. I matched them by document order to the text that follows (Daemonic Manifestation, Veteran Cadre, Apothecarion, Techmarine, Recon Demi-company, Storm Battery, Dreadnought Talon). Re-check against the book art.
+9. **Master Sergeant / Paragon of Battle** need a Sergeant / Command sub-type model to *do* anything. I don't make picking one illegal on a unit without such a model. Unclear.
+
+## Not found (hooks only, unconfirmed)
+
+- **U-1 Units that don't take a slot.** HH3 says "each Unit selected as part of a Detachment will fill a Force Organisation Slot". The designer's note says Dedicated Transports and Retinues-as-part-of-the-commander's-choice are gone. I found **no** HH3 slot-free unit. `UnitDef.takesNoSlot` exists but the validator doesn't honour it yet (on purpose).
+- **U-2 Options that change a unit's role.** Not found in what I read. The closest things are Prime Advantages that *add slots* (Iron Hands, Ultramarines, Alpha Legion, Shattered Legions) and Special Assignment (a role exception on a *slot*, not a unit). `OptionEffect.setRole` exists and is honoured.
+- **U-3 Retinue units needing a commander.** No list-building rule found that ties a Retinue to an HC/Command unit (it may be a deployment/joining rule in the Libers). Not enforced.
+- **U-4** Apothecarion Delegation / Techmarine Covenant unlocks (ambiguity 4 above).
+- Legion-specific exceptions I didn't model in sample data: Shattered Legions mixed Factions (`mixedFactions` flag exists), Blackshields, Knights-Errant, Legiones Inductii details beyond "no Primes", Corrupted Legions beyond True Believers, Daemonic Manifestation's cross-list slot (supported by `SlotRestriction.armyList`).

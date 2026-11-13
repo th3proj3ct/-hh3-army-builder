@@ -186,6 +186,9 @@ export function validate(roster: Roster, catalog: Catalog): ValidationResult {
       if (rs?.unitIds && !rs.unitIds.includes(udef.id))
         err(det.extraSlots.some((x) => x.id === slot.id) ? 'SLOT-RESTRICTION-EXTRA' : 'SLOT-RESTRICTION',
           `${roleLabel(slot.role)} slots in ${def.name} only take: ${rs.unitIds.map((id) => unitDefs.get(id)?.name ?? id).join(', ')}`, uat);
+      if (rs?.excludeUnitIds?.includes(udef.id))
+        err(det.extraSlots.some((x) => x.id === slot.id) ? 'SLOT-RESTRICTION-EXTRA' : 'SLOT-RESTRICTION',
+          `${roleLabel(slot.role)} slots in ${def.name} can't take ${udef.name}`, uat);
       if (rs?.nameContainsDetachmentChoice && (!det.choice || !udef.name.includes(det.choice)))
         err('SLOT-RESTRICTION', det.choice
           ? `${def.name} was set to "${det.choice}", so ${roleLabel(slot.role)} slots need a unit with "${det.choice}" in its name`
@@ -487,7 +490,7 @@ export function validate(roster: Roster, catalog: Catalog): ValidationResult {
   if (allied > alliedCap) err('ALLIED-CAP', `Allied detachments total ${allied.toLocaleString('en')} points; the cap is ${alliedCap.toLocaleString('en')}`);
 
   const big = resolved
-    .filter((u) => u.detDef.kind === 'LordOfWar' || u.role === 'Warlord' || u.role === 'LordOfWar')
+    .filter((u) => u.role === 'Warlord' || u.role === 'LordOfWar')
     .reduce((s, u) => s + u.points, 0);
   const bigCap = shareCap(limit, catalog.limits.warlordLordOfWarShare);
   if (big > bigCap) err('LOW-CAP', `Warlord and Lord of War units total ${big.toLocaleString('en')} points; the shared cap is ${bigCap.toLocaleString('en')}`);

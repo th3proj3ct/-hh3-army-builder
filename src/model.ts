@@ -128,6 +128,8 @@ export type OptionEffect =
 /** Narrow which units may fill a slot. All present fields must pass. */
 export interface SlotRestriction {
   unitIds?: string[];
+  /** Deny-list, e.g. Reaping Host: "Troops Slots … may not be used to select Assault Squad Units". */
+  excludeUnitIds?: string[];
   /** Linebreaker Echelon: unit name must contain the word chosen for the detachment. */
   nameContainsDetachmentChoice?: boolean;
   /** Overrides the detachment's army list for this slot (e.g. Daemonic Manifestation). */

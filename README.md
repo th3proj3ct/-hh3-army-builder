@@ -20,6 +20,26 @@ npm run typecheck
 | [docs/UI-SPEC.md](docs/UI-SPEC.md) | UI spec built around explanation |
 | [docs/TEST-PLAN.md](docs/TEST-PLAN.md) | Outside checks, think-aloud study, errata drill |
 
+## Real data (BSData import)
+
+Unit profiles and points come from the [BSData Horus Heresy 3rd edition repo](https://github.com/BSData/horus-heresy-3rd-edition) (NewRecruit JSON). Rules stay hand-entered in `src/core-data.ts`; only units are imported.
+
+```
+npm run import:bsdata -- "C:/Users/jesse/Documents/repos/horus-heresy-3rd-edition"
+```
+
+- Output: `data/bsdata/units.json` (stamped with the BSData commit, which becomes `CATALOG.version`), plus [`data/bsdata/IMPORT-REPORT.md`](data/bsdata/IMPORT-REPORT.md) listing every approximation.
+- Imported now: generic Legiones Astartes units and Death Guard units (145 total). Pass other catalogue file names to import more Legions.
+- `test/points-crosscheck.test.ts` checks 14 units against Wahapedia (all matched on 13 Nov 2026), so BSData isn't checking itself.
+- `test/death-guard.test.ts`: 2 legal and 11 illegal Death Guard lists on real points.
+
+**Known gaps in the import:**
+- Legion-specific option entries that BSData hides unless a Legion is picked (e.g. Legion armoury items) are skipped. The report gives the count.
+- Option caps on units with several model types (e.g. sergeant vs legionaries) use total unit size, not per-type counts.
+- Conditional costs use the base cost.
+- Mortus Poisoner Squad isn't on Wahapedia, so its points are unchecked.
+- Units only linked under special slot categories (Castellax/Thallax maniples, "Logisticae" variants) aren't imported.
+
 ## Critique of the original plan
 
 1. **Prime slots are missing from the plan, and they are core to HH3 list building.** Primary, Allied and several Apex/Legion detachments have Prime slots. Prime Advantages can add slots (Logistical Benefit, plus Iron Hands, Ultramarines, Alpha Legion and Shattered Legions variants). One of them, Special Assignment, lets a High Command unit sit in a Command slot that then *unlocks nothing*. That last one is precisely the kind of thing that confuses new players about unlocking. These are modelled and tested here.

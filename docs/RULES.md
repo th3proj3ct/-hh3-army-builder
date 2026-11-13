@@ -84,6 +84,14 @@ Status key: ✅ confirmed as written · ⚠️ ambiguous (reading chosen, flagge
 | OPT-GATED | Allegiance- or Legion-armoury-only options | ✅ |
 | OPT-DECURION-ONE | ≤1 Legiones Decurion per unit | ✅ |
 
+## Project decisions (13 Nov 2026)
+
+- **LOW-CAP:** every unit with the Warlord or Lord of War *role* counts, total ≤ ceil(25%). This matches BSData's "Warlord or Lord of War" category, except BSData rounds down.
+- **Apothecarion Delegation / Techmarine Covenant:** chosen with any open Command/High Command unlock (BSData agrees: it only requires a Legion Primary). Other specific-unit Auxiliaries (Recon Demi-Company → Vigilator, Dreadnought Talon → Mortificator, …) keep their unit requirement. BSData confirms both of those.
+- **Retinues don't need a commander.** Neither source has such a rule.
+- **Legions may ally other Legions** of the same Allegiance.
+- **Death Guard:** Reaping Host (Troops Prime, Troops, Support, Heavy Assault; no Assault Squads in Troops; Death Guard Primary only). Unnatural Resilience is once per army, for a Death Guard Centurion or "Cataphractii Centurion" (mapped to Centurion in Terminator Armour, **confirm**).
+
 ## Ambiguities: the reading I chose
 
 1. **LOW-CAP: what counts, and ≤ or <.** The Lord of War Detachment section counts the *whole LoW Detachment* plus Warlord-role units. The Warlord Detachment section counts *Warlord-role units* plus LoW-role units elsewhere. The summary box says all Warlord or LoW **role** units. One sentence about armies under 3,000 points says "less than 25%"; everywhere else it's "no more than". **Encoded:** LoW Detachment units + Warlord/LoW-role units anywhere, ≤ ceil(25%). Retinue and Heavy Transport units in a Warlord Detachment are **not** counted.

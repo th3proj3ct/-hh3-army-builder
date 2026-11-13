@@ -87,7 +87,7 @@ export const RULES = Object.fromEntries(
     r('WARLORD-SAME-LIST', 'A Warlord Detachment uses the Primary Detachment\'s army list and Faction', aod('Detachment Types › Warlord Detachments')),
     r('WARLORD-PARAGON', 'A Warlord Detachment must include at least one Paragon model', aod('Detachment Types › Warlord Detachments')),
     r('LOW-CAP', 'Warlord and Lord of War units share one 25% allowance, rounded up', aod('Warlords and Lords of War'), 'ambiguous',
-      'Sources differ on what counts and on ≤ vs <. Encoded: (all units in the Lord of War Detachment) + (every Warlord- or Lord-of-War-role unit elsewhere) ≤ ceil(25% × limit). Retinue/Heavy Transport units in the Warlord Detachment do NOT count. The "<3,000 armies: less than 25%" sentence is read as ≤.'),
+      'Sources differ on what counts and on ≤ vs <. Project decision (matches BSData): every unit with the Warlord or Lord of War Battlefield Role counts, and the total must be ≤ ceil(25% × limit). Retinue/Heavy Transport units in a Warlord Detachment do not count. BSData rounds the cap down; the rulebook says round up, so we round up.'),
     // ── Prime slots ─────────────────────────────────────────────────────────
     r('PRIME-ONLY-ON-PRIME', 'Prime Advantages can only be chosen for filled Prime slots', aod('Prime Slots')),
     r('PRIME-UNIQUE', 'A unit with a Unique model in a Prime slot may only take Special Assignment or Logistical Benefit', aod('Prime Slots')),

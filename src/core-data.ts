@@ -196,6 +196,36 @@ export const ASTARTES_DETACHMENTS: DetachmentDef[] = [
   },
 ];
 
+/** Death Guard (Liber Hereticus, as shown on Wahapedia). Layout from the chart markup. */
+export const DEATH_GUARD_DETACHMENTS: DetachmentDef[] = [
+  {
+    id: 'reaping-host',
+    name: 'Reaping Host',
+    kind: 'Auxiliary',
+    slots: slots('reaping-host', ['Troops*', 'Troops', 'Support', 'HeavyAssault'], {
+      Troops: { excludeUnitIds: ['assault-squad'], source: lib('Death Guard › Reaping Host') },
+    }),
+    armyListRule: 'linked',
+    requirements: [{ kind: 'primaryFaction', factions: ['Death Guard'], source: lib('Death Guard › Additional Detachment') }],
+    grantsUnlocks: false,
+    source: lib('Death Guard › Additional Detachment › Reaping Host'),
+  },
+];
+
+export const DEATH_GUARD_PRIME_ADVANTAGES: PrimeAdvantageDef[] = [
+  {
+    id: 'unnatural-resilience',
+    name: 'Unnatural Resilience',
+    effect: { kind: 'modelBuff' },
+    oncePer: 'army',
+    allowedForUnique: false,
+    // "a Centurion Model … or a Cataphractii Centurion Model with the Death Guard Trait".
+    // Cataphractii Centurion is mapped to "Centurion in Terminator Armour" — confirm.
+    unitRequirement: { unitIds: ['centurion', 'centurion-in-terminator-armour'], factionTraits: ['Death Guard'] },
+    source: lib('Death Guard › Unnatural Resilience'),
+  },
+];
+
 export const CORE_PRIME_ADVANTAGES: PrimeAdvantageDef[] = [
   { id: 'master-sergeant', name: 'Master Sergeant', effect: { kind: 'modelBuff' }, oncePer: 'detachment', allowedForUnique: false, source: src('Prime Slots › Core Prime Traits') },
   { id: 'combat-veterans', name: 'Combat Veterans', effect: { kind: 'modelBuff' }, allowedForUnique: false, source: src('Prime Slots › Core Prime Traits') },

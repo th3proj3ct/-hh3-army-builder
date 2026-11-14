@@ -40,7 +40,7 @@ It opens on the legal 3,000 pt Death Guard sample. "New list" starts empty, and 
 - Undo/redo (Ctrl+Z / Ctrl+Shift+Z) and Export JSON. The list is remembered in localStorage.
 - On phones the details panel is a bottom sheet.
 
-- **Role icons:** the app draws its own icon for each Battlefield Role. To use your own images instead, put them in `ui/role-icons/` (see the README there for file names). Git ignores that folder, and builds leave the images out unless you set `ROLE_ICONS=include`.
+- **Role icons:** the app draws its own icon for each Battlefield Role. To use your own images instead, put them in `ui/role-icons/` (see the README there for file names).
 
 Every lock reason comes from `explainChange()`, so the UI has no rules logic of its own. Code is in `ui/src/`.
 

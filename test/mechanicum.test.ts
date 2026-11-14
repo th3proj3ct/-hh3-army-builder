@@ -38,8 +38,8 @@ describe('Mechanicum import', () => {
     const units = CATALOG.units.filter((d) => d.armyList === 'mechanicum');
     expect(units.length).toBeGreaterThanOrEqual(39);
     expect(units.every((d) => d.factionTrait === 'Mechanicum')).toBe(true);
-    // The Astartes import is unchanged.
-    expect(CATALOG.units.filter((d) => d.armyList === 'legiones-astartes').length).toBe(146);
+    // Mechanicum units stay out of the Legiones Astartes list.
+    expect(CATALOG.units.filter((d) => d.armyList === 'legiones-astartes').every((d) => d.factionTrait !== 'Mechanicum')).toBe(true);
   });
   it('reads sub-factions: fixed on Castellax, a choice of seven on an Archmagos', () => {
     expect(byId.get('castellax-battle-maniple')?.subFaction).toBe('Cybernetica');

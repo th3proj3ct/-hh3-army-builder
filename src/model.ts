@@ -83,6 +83,10 @@ export interface UnitDef {
    * Detachments from that slot instead of one.
    */
   commandAuxUnlocks?: number;
+  /** Consul-Delegatus: in a Command slot, may unlock one Apex instead of an Auxiliary. One such model per army. */
+  commandUnlocksApex?: boolean;
+  /** Tank Commander (X): in a (High) Command slot, may unlock X Auxiliaries that have only Armour slots. */
+  tankCommander?: number;
   /** Mechanicum sub-faction fixed by the profile (e.g. Castellax are Cybernetica). */
   subFaction?: string;
   /** Sub-factions the player must choose one of for this unit (e.g. a Magos). */
@@ -169,6 +173,8 @@ export type DetachmentRequirement =
   | { kind: 'primaryFaction'; factions: string[]; source: SourceRef }
   | { kind: 'riteOfWar'; rites: string[]; source: SourceRef }
   | { kind: 'armyIncludesUnit'; unitIds: string[]; source: SourceRef }
+  /** "An Army whose Primary Detachment includes a Model with <rule>…" (Tip of the Spear → Planetfall Speartip). */
+  | { kind: 'primaryIncludesUnit'; unitIds: string[]; source: SourceRef }
   | { kind: 'detachmentIncludesUnit'; unitIds: string[]; source: SourceRef }
   | { kind: 'detachmentIncludesModelTag'; tag: ModelTag; source: SourceRef }
   /** "When an X Unit is selected to fill a Command slot, … add one Y instead of the Crusade FOC options." */

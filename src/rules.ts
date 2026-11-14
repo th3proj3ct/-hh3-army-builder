@@ -69,8 +69,10 @@ export const RULES = Object.fromEntries(
     // ── Detachment counts and links ─────────────────────────────────────────
     r('DET-UNLOCK-REQUIRED', 'Apex and Auxiliary detachments must be unlocked by a filled Command or High Command slot', aod('Detachment Types › Adding Detachments to an Army')),
     r('DET-UNLOCK-HC', 'A High Command slot unlocks one Apex OR one Auxiliary detachment, not both', aod('Detachment Types › Apex Detachments')),
-    r('DET-UNLOCK-CMD', 'A Command slot unlocks one Auxiliary detachment (never an Apex)', aod('Detachment Types › Primary Detachments')),
-    r('DET-UNLOCK-ONE', 'Each Command/High Command slot unlocks one detachment (Officer of the Line (X) units in a Command slot: X Auxiliaries)', aod('Detachment Types › Primary Detachments; Special Rules › Officer of the Line (X)')),
+    r('DET-UNLOCK-CMD', 'A Command slot unlocks one Auxiliary detachment, not an Apex (unless its unit has Consul-Delegatus)', aod('Detachment Types › Primary Detachments; Special Rules › Consul-Delegatus')),
+    r('DET-UNLOCK-ONE', 'Each Command/High Command slot unlocks one detachment (Officer of the Line (X) in a Command slot: X Auxiliaries; Tank Commander (X): X Armour-only Auxiliaries)', aod('Detachment Types › Primary Detachments; Special Rules › Officer of the Line (X), Tank Commander (X)')),
+    r('ARMY-CONSUL-ONE', 'An army may include only one model with Consul-Delegatus (which lets a Command slot unlock an Apex)', aod('Special Rules › Consul-Delegatus')),
+    r('DET-MAX-ONCE', 'This detachment may be taken only once per army', aod('Special Rules › Tip of the Spear')),
     r('DET-UNLOCK-SOURCE', 'Only Primary, Apex and Allied detachments can unlock further detachments', aod('Detachment Types › Primary / Apex / Allied Detachments'), 'ambiguous',
       'The FOC summary says slots filled "in any Detachment" count, but the per-type text only grants unlocks to Primary, Apex and Allied. No core Auxiliary has Command slots, so this only matters for future detachments.'),
     r('DET-UNLOCK-ALLIED', 'An Allied detachment can only unlock Auxiliary detachments, linked to that Allied detachment', aod('Detachment Types › Allied Detachments')),

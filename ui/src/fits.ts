@@ -70,6 +70,7 @@ export function extraRequirements(def: DetachmentDef): string[] {
     if (r.kind === 'minPointsLimit') reqs.push(`${r.value.toLocaleString('en')}+ pts`);
     if (r.kind === 'unlockedByUnit')
       reqs.push(`needs ${r.subFaction ? `a ${r.subFaction} ` : ''}${r.unitIds.map((id) => unitName(id)).join('/')} in a ${def.kind === 'Apex' ? 'High Command' : 'Command'} slot`);
+    if (r.kind === 'primaryIncludesUnit') reqs.push(`needs ${r.unitIds.map((id) => unitName(id)).join('/')} in the Primary Detachment`);
     if (r.kind === 'armyIncludesUnit') reqs.push(`army must include ${r.unitIds.map((id) => unitName(id)).join(' or ')}`);
   }
   return reqs;

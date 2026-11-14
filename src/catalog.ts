@@ -9,6 +9,8 @@ import {
   CORE_PRIME_ADVANTAGES,
   DEATH_GUARD_DETACHMENTS,
   DEATH_GUARD_PRIME_ADVANTAGES,
+  LEGION_DETACHMENTS,
+  LEGION_PRIME_ADVANTAGES,
   MECHANICUM_DETACHMENTS,
 } from './core-data';
 
@@ -62,8 +64,8 @@ export const CATALOG: Catalog = {
   version: `bsdata-${imported.commit}`,
   armyLists: [LEGIONES_ASTARTES, MECHANICUM],
   units: imported.units as UnitDef[],
-  detachments: [...CORE_DETACHMENTS, ...ASTARTES_DETACHMENTS.map(astartesOnly), ...DEATH_GUARD_DETACHMENTS.map(astartesOnly), ...MECHANICUM_DETACHMENTS],
-  primeAdvantages: [...CORE_PRIME_ADVANTAGES, ...ASTARTES_PRIME_ADVANTAGES, ...DEATH_GUARD_PRIME_ADVANTAGES],
+  detachments: [...CORE_DETACHMENTS, ...ASTARTES_DETACHMENTS.map(astartesOnly), ...DEATH_GUARD_DETACHMENTS.map(astartesOnly), ...LEGION_DETACHMENTS.map(astartesOnly), ...MECHANICUM_DETACHMENTS],
+  primeAdvantages: [...CORE_PRIME_ADVANTAGES, ...ASTARTES_PRIME_ADVANTAGES, ...DEATH_GUARD_PRIME_ADVANTAGES, ...LEGION_PRIME_ADVANTAGES],
   missions: CORE_MISSIONS,
   limits: CORE_LIMITS,
 };

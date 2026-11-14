@@ -21,6 +21,7 @@ import {
   slotsOf,
   unitDefs,
   unlockAllowance,
+  unlockSummary,
   type BuilderState,
 } from './state';
 import { RoleIcon } from './RoleIcon';
@@ -35,7 +36,6 @@ interface Props {
 }
 
 
-const NUMBER_WORDS: Record<number, string> = { 2: 'two', 3: 'three', 4: 'four' };
 
 export function slotLabel(det: DetachmentInstance, slot: SlotDef): string {
   const extra = det.extraSlots.find((x) => x.id === slot.id);
@@ -157,13 +157,7 @@ function DetachmentCard({ det, depth, props }: { det: DetachmentInstance; depth:
               <div key={s.id} className="unlock">
                 <div className="connector">
                   <span aria-hidden>↳</span> {unitName} in <strong>{slotLabel(det, s)}</strong>{' '}
-                  {special
-                    ? 'is on Special Assignment, so it unlocks nothing.'
-                    : s.role === 'HighCommand'
-                      ? 'can unlock one Apex or one Auxiliary detachment.'
-                      : allowance > 1
-                        ? `can unlock ${NUMBER_WORDS[allowance] ?? allowance} Auxiliary detachments (Officer of the Line (${allowance}))${kids.length ? ` · ${kids.length} of ${allowance} used` : ''}.`
-                        : 'can unlock one Auxiliary detachment.'}
+                  {unlockSummary(det, s, kids.length)}
                 </div>
                 {kids.map((k) => (
                   <DetachmentCard key={k.id} det={k} depth={depth + 1} props={props} />

@@ -53,14 +53,17 @@ npm run import:bsdata -- "C:/Users/jesse/Documents/repos/horus-heresy-3rd-editio
 ```
 
 - Output: `data/bsdata/units.json` (stamped with the BSData commit, which becomes `CATALOG.version`), plus [`data/bsdata/IMPORT-REPORT.md`](data/bsdata/IMPORT-REPORT.md) listing every approximation.
-- Imported now: generic Legiones Astartes units and Death Guard units (146), plus the Mechanicum list (39 units, its own army list with sub-factions and five Apex detachments; see [docs/RULES.md](docs/RULES.md#mechanicum-14-nov-2026)). Pass other catalogue file names to import more Legions.
-- `test/points-crosscheck.test.ts` checks 14 units against Wahapedia (all matched on 13 Nov 2026), so BSData isn't checking itself.
+- Imported now (372 units): the generic Legiones Astartes units, all 18 Legions' own units and armouries, and the Mechanicum list (39 units, its own army list with sub-factions and five Apex detachments; see [docs/RULES.md](docs/RULES.md#mechanicum-14-nov-2026)). Pass catalogue file names to import a subset.
+- Units that several catalogues define separately get the Faction in their id (every Legion's `inductii-squad-<legion>`); saved lists using an old id are migrated on load.
+- `test/points-crosscheck.test.ts` checks 26 units against Wahapedia (14 on 13 Nov 2026, plus 12 Legion-specific units on 14 Nov; all matched), so BSData isn't checking itself.
 - `test/death-guard.test.ts`: 2 legal and 11 illegal Death Guard lists on real points.
 
 **Legion armoury:** BSData hides armoury items by default and reveals them with conditions like "force is the XIV - Death Guard catalogue". The importer evaluates those conditions once per Legion. Each item is imported with `factionTraits` set to the Legions that see it, and the validator enforces that (`OPT-GATED`). Conditions it can't evaluate count as "not met" (Blackshields, Shattered Legions, upgrade-dependent ones), so nothing leaks through. Only Legions whose catalogue is being imported get their armoury, so today that's Death Guard: power scythes, alchem casters, alchem flamers and alchem combi-flamers.
 
 **Known gaps in the import:**
-- Other Legions' armoury items aren't imported until their catalogue is (e.g. `npm run import:bsdata -- <repo> "Legiones Astartes.json" "Death Guard.json" "Iron Warriors.json"`). Blackshields and Shattered Legions access to armouries isn't modelled.
+- Blackshields and Shattered Legions access to armouries isn't modelled.
+- "Rewards of Treachery" (other Legions' units a Traitor Legion may take) and Rite of War army configurations are skipped; see the import report.
+- Legion detachments are hand-entered: every Legion's Additional Detachments are in (see [docs/RULES.md](docs/RULES.md#legion-additional-detachments-14-nov-2026)), but most Legion-specific Prime Advantages aren't yet.
 - Option caps on units with several model types (e.g. sergeant vs legionaries) use total unit size, not per-type counts.
 - Conditional costs use the base cost.
 - Mortus Poisoner Squad isn't on Wahapedia, so its points are unchecked.

@@ -27,7 +27,7 @@ export function deathGuardSample(): BuilderState {
   put(P, 'crusade-primary', 'Troops1', 'tactical-squad', 20);
   s = setPrime(s, P, slot('crusade-primary', 'Troops1'), 'master-sergeant');
   put(P, 'crusade-primary', 'Troops2', 'tactical-squad');
-  put(P, 'crusade-primary', 'Troops3', 'inductii-squad');
+  put(P, 'crusade-primary', 'Troops3', 'inductii-squad-death-guard');
   put(P, 'crusade-primary', 'Transport1', 'rhino');
   put(P, 'crusade-primary', 'Transport2', 'rhino');
 

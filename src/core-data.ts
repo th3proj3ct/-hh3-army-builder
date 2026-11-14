@@ -157,6 +157,23 @@ export const ASTARTES_DETACHMENTS: DetachmentDef[] = [
     Support: { unitIds: ['rapier-battery'], source: lib('Storm Battery') },
     Armour: { unitIds: ['arquitor-bombard', 'vindicator-siege-tank'], source: lib('Storm Battery') },
   }),
+  // Tip of the Spear (Master of Descent): "An Army whose Primary Detachment includes a Model with
+  // this Special Rule may select the Planetfall Speartip Auxiliary Detachment once per Army,
+  // following all the normal Rules for selecting Auxiliary Detachments." (BSData Special Rules)
+  {
+    id: 'planetfall-speartip',
+    name: 'Planetfall Speartip',
+    kind: 'Auxiliary',
+    slots: slots('planetfall-speartip', ['Retinue', 'Elites*', 'Elites*'], {
+      Retinue: { unitIds: ['praetorian-command-squad-with-jump-packs'], source: lib('Special Rules › Tip of the Spear') },
+      Elites: { unitIds: ['veteran-assault-squad'], source: lib('Special Rules › Tip of the Spear') },
+    }),
+    armyListRule: 'linked',
+    requirements: [{ kind: 'primaryIncludesUnit', unitIds: ['master-of-descent'], source: lib('Special Rules › Tip of the Spear') }],
+    exclusiveGroup: { id: 'planetfall-speartip', max: 1 },
+    grantsUnlocks: false,
+    source: { book: 'BSData horus-heresy-3rd-edition', section: 'Special Rules › Tip of the Spear; Auxiliary - Planetfall Speartip' },
+  },
   specificAux('dreadnought-talon', 'Dreadnought Talon', ['WarEngine', 'WarEngine', 'WarEngine'], ['mortificator', 'mortificator-in-terminator-armour'], {
     WarEngine: { unitIds: ['contemptor-dreadnought'], source: lib('Dreadnought Talon') },
   }),
@@ -312,6 +329,126 @@ export const MECHANICUM_DETACHMENTS: DetachmentDef[] = [
     Support: { unitIds: ['thallax-cohort'] },
   }),
 ];
+
+/**
+ * Legion Additional Detachments: "An Army that has a Primary Detachment with the <Legion>
+ * Faction may select the following … Detachments using the standard Rules". Layouts and
+ * restrictions read from each Legion's Wahapedia page (chart markup), 14 Nov 2026, and
+ * checked against BSData's force entries. Where the two differ, Wahapedia is used and
+ * the difference is listed in docs/RULES.md.
+ */
+type Restrict = Partial<Record<BattlefieldRole, Omit<NonNullable<SlotDef['restriction']>, 'source'>>>;
+function legionDet(
+  legion: string,
+  id: string,
+  name: string,
+  spec: string[],
+  restrict: Restrict = {},
+  extra: { kind?: 'Auxiliary' | 'Apex'; requirements?: DetachmentDef['requirements']; allowedPrimeAdvantages?: string[] } = {},
+): DetachmentDef {
+  const source = lib(`${legion} › Additional Detachments › ${name}`);
+  const kind = extra.kind ?? 'Auxiliary';
+  return {
+    id,
+    name,
+    kind,
+    slots: slots(id, spec, Object.fromEntries(Object.entries(restrict).map(([r, x]) => [r, { ...x, source }]))),
+    armyListRule: 'linked',
+    requirements: [{ kind: 'primaryFaction', factions: [legion], source }, ...(extra.requirements ?? [])],
+    ...(extra.allowedPrimeAdvantages ? { allowedPrimeAdvantages: extra.allowedPrimeAdvantages } : {}),
+    grantsUnlocks: kind === 'Apex',
+    source,
+  };
+}
+const only = (...unitIds: string[]) => ({ unitIds });
+
+export const LEGION_DETACHMENTS: DetachmentDef[] = [
+  // I – Dark Angels
+  legionDet('Dark Angels', 'ironwing-gauntlet', 'Ironwing Gauntlet', ['HeavyTransport', 'HeavyTransport', 'Armour', 'Armour']),
+  legionDet('Dark Angels', 'dreadwing-cadre', 'Dreadwing Cadre', ['Support*', 'Support', 'Support'], { Support: only('dreadwing-interemptor-squad', 'rapier-battery') }),
+  legionDet('Dark Angels', 'stormwing-muster', 'Stormwing Muster', ['Troops*', 'Troops*', 'Transport', 'Transport']),
+  legionDet('Dark Angels', 'deathwing-conclave', 'Deathwing Conclave', ['Retinue*', 'Elites', 'HeavyAssault']),
+  legionDet('Dark Angels', 'ravenwing-lance', 'Ravenwing Lance', ['FastAttack*', 'FastAttack', 'Recon', 'Recon'], { Recon: only('outrider-squadron') }),
+  legionDet('Dark Angels', 'firewing-echelon', 'Firewing Echelon', ['Recon*', 'Recon', 'Elites', 'Elites'], { Elites: only('seeker-squad') }),
+  // III – Emperor's Children (Brotherhood of the Phoenix is in ASTARTES_DETACHMENTS)
+  legionDet("Emperor's Children", 'primacy-wing', 'Primacy Wing', ['Retinue', 'Elites', 'FastAttack', 'FastAttack']),
+  // IV – Iron Warriors
+  legionDet('Iron Warriors', 'ironfire-cohort', 'The Ironfire Cohort', ['Armour*', 'Armour', 'Support', 'Support'], { Armour: only('arquitor-bombard') }),
+  legionDet('Iron Warriors', 'hammer-of-olympia', 'The Hammer of Olympia', ['HeavyAssault*', 'HeavyAssault', 'HeavyTransport', 'Troops*', 'Troops'], {}, {
+    kind: 'Apex',
+    requirements: [{ kind: 'armyIncludesUnit', unitIds: ['warsmith', 'perturabo'], source: lib('Iron Warriors › The Hammer of Olympia') }],
+  }),
+  // V – White Scars
+  legionDet('White Scars', 'chogorian-warband', 'Chogorian Warband', ['FastAttack*', 'FastAttack', 'Recon', 'Recon'], {
+    FastAttack: only('scimitar-jetbike-squadron'),
+    Recon: only('outrider-squadron'),
+  }),
+  // VI – Space Wolves
+  legionDet('Space Wolves', 'bloodied-claw', 'Bloodied Claw', ['Troops*', 'Troops', 'HeavyAssault', 'HeavyAssault'], { Troops: only('grey-slayer-pack') }),
+  // VII – Imperial Fists
+  legionDet('Imperial Fists', 'siege-gauntlet', 'Siege Gauntlet', ['Troops*', 'Troops', 'HeavyAssault', 'Support'], { Troops: only('breacher-squad') }),
+  // VIII – Night Lords
+  legionDet('Night Lords', 'terror-assault', 'Terror Assault', ['Troops*', 'Troops', 'FastAttack', 'FastAttack'], { Troops: only('terror-squad') }),
+  legionDet('Night Lords', 'atramentar-hunt', 'Atramentar Hunt', ['Retinue*', 'HeavyAssault*', 'HeavyAssault*'], {
+    Retinue: only('cataphractii-terminator-command-squad', 'tartaros-terminator-command-squad'),
+    HeavyAssault: only('cataphractii-terminator-squad', 'tartaros-terminator-squad'),
+  }, { kind: 'Apex', allowedPrimeAdvantages: ['atramentar'] }),
+  // IX – Blood Angels
+  legionDet('Blood Angels', 'revelation-host', 'Revelation Host', ['Troops*', 'Troops', 'Elites', 'Elites'], {
+    Troops: only('assault-squad'),
+    Elites: only('dawnbreaker-cohort', 'veteran-assault-squad'),
+  }),
+  // X – Iron Hands (Medusan Vanguard is in ASTARTES_DETACHMENTS)
+  legionDet('Iron Hands', 'spearhead-phalanx', 'Spearhead Phalanx', ['HeavyTransport', 'Armour', 'HeavyAssault'], { HeavyTransport: only('land-raider-carrier', 'spartan-assault-tank') }),
+  // XII – World Eaters
+  legionDet('World Eaters', 'berserker-cadre', 'Berserker Cadre', ['Troops*', 'HeavyAssault', 'HeavyAssault', 'Elites'], { HeavyAssault: only('rampager-squad') }),
+  legionDet('World Eaters', 'sons-of-bodt', 'Sons of Bodt', ['Support*', 'Support*', 'Troops', 'Troops', 'Troops'], { Support: only('apothecary') }),
+  // XIII – Ultramarines. Wahapedia: Apex; BSData: Auxiliary (see RULES.md).
+  legionDet('Ultramarines', 'primus-demi-company', 'Primus Demi-company', ['Command*', 'Troops', 'Troops', 'Support', 'FastAttack'], { Command: only('optae') }, { kind: 'Apex' }),
+  // XV – Thousand Sons
+  legionDet('Thousand Sons', 'prosperine-convocation', 'Prosperine Convocation', ['Troops*', 'FastAttack', 'Elites', 'HeavyTransport']),
+  // XVI – Sons of Horus
+  legionDet('Sons of Horus', 'supremacy-cadre', 'Supremacy Cadre', ['Troops*', 'Troops*', 'HeavyAssault', 'Elites']),
+  // XVIII – Salamanders
+  legionDet('Salamanders', 'immolation-covenant', 'Immolation Covenant', ['Support*', 'Support', 'Armour', 'Armour'], { Armour: only('predator', 'vindicator-siege-tank') }),
+  // XIX – Raven Guard
+  legionDet('Raven Guard', 'decapitation-cadre', 'Decapitation Cadre', ['Recon', 'Recon', 'Elites', 'Elites'], {
+    Recon: only('reconnaissance-squad'),
+    Elites: only('veteran-assault-squad', 'dark-fury-squad'),
+  }),
+  // XX – Alpha Legion
+  legionDet('Alpha Legion', 'headhunter-leviathal', 'Headhunter Leviathal', ['Recon*', 'Recon*', 'Elites', 'Elites'], { Elites: only('seeker-squad', 'headhunter-kill-team') }),
+];
+
+export const LEGION_PRIME_ADVANTAGES: PrimeAdvantageDef[] = [
+  {
+    id: 'atramentar',
+    name: 'Atramentar',
+    summary: 'Night Lords Terminators: the unit gains Deep Strike and Impact (I). The only Prime Advantage in an Atramentar Hunt.',
+    effect: { kind: 'modelBuff' },
+    allowedForUnique: false,
+    unitRequirement: {
+      unitIds: ['centurion-in-terminator-armour', 'cataphractii-terminator-command-squad', 'tartaros-terminator-command-squad', 'cataphractii-terminator-squad', 'tartaros-terminator-squad'],
+      factionTraits: ['Night Lords'],
+    },
+    source: lib('Night Lords › Atramentar'),
+  },
+];
+
+/** Mechanicum Auxiliaries (BSData force entries: "Mechanicum only", no unit restrictions). */
+const mechAux = (id: string, name: string, spec: string[]): DetachmentDef => ({
+  ...aux(id, name, spec),
+  armyLists: ['mechanicum'],
+  source: mech(`Auxiliary Detachments › ${name}`),
+});
+MECHANICUM_DETACHMENTS.push(
+  mechAux('taghmata-cohort', 'Taghmata Cohort', ['Support', 'Support', 'Support', 'Support']),
+  mechAux('apprentice-cadre', 'Apprentice Cadre', ['Troops*', 'Troops', 'Troops', 'Troops']),
+  // "All Troops must have the Combat Veterans Prime Advantage": not enforced (see RULES.md).
+  mechApex('heart-of-power', 'The Heart of Power', ['Retinue*', 'Retinue', 'Retinue', 'Troops*', 'Troops*', 'Troops*'], 'Archimandrite', {}),
+  // "All must take the Prime Conveyor Prime Advantage": that advantage isn't in the data yet.
+  mechApex('iron-phalanx', 'Iron Phalanx', ['Armour*', 'Armour*', 'Armour*', 'HeavyTransport*', 'HeavyTransport*', 'HeavyTransport*'], 'Macrotek', {}),
+);
 
 export const DEATH_GUARD_PRIME_ADVANTAGES: PrimeAdvantageDef[] = [
   {

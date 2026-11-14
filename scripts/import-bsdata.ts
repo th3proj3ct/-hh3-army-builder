@@ -7,7 +7,7 @@
  *
  *   node scripts/import-bsdata.ts <path-to-bsdata-repo> [Catalogue.json ...]
  *
- * Default catalogues: "Legiones Astartes.json", "Death Guard.json" and "Mechanicum.json".
+ * Default catalogues: "Legiones Astartes.json", every Legion's own catalogue, and "Mechanicum.json".
  */
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
@@ -46,7 +46,7 @@ if (!repo) {
   console.error('usage: node scripts/import-bsdata.ts <bsdata-repo> [Catalogue.json ...]');
   process.exit(1);
 }
-const catalogueFiles = requested.length ? requested : ['Legiones Astartes.json', 'Death Guard.json', 'Mechanicum.json'];
+const catalogueFiles = requested.length ? requested : ['Legiones Astartes.json', ...LEGIONS.map((l) => `${l}.json`), 'Mechanicum.json'];
 /** Catalogues that are their own army list (not a Legion of the Legiones Astartes list). */
 const ARMY_LISTS: Record<string, { armyList: string; faction: string }> = {
   Mechanicum: { armyList: 'mechanicum', faction: 'Mechanicum' },
@@ -247,8 +247,14 @@ function collectModels(unit: Node): ModelInfo[] {
     for (const { node, group } of children(n)) {
       if (group) walk(node, true);
       else if (node.type === 'model') {
-        const min = parentLimit(node, 'min') ?? 0;
-        const max = parentLimit(node, 'max') ?? min;
+        // Size is usually a parent-scope limit on the model; some units (Procurators) put the
+        // whole unit's size on one model at unit scope instead.
+        const unitScope = (type: 'min' | 'max'): number | undefined =>
+          (node.constraints ?? []).find((c: Node) => c.type === type && c.field === 'selections' && c.scope === 'unit')?.value;
+        const min = parentLimit(node, 'min') ?? unitScope('min') ?? 0;
+        const max = parentLimit(node, 'max') ?? unitScope('max') ?? min;
+        if (parentLimit(node, 'min') === undefined && unitScope('min') !== undefined)
+          note(unit.name, `unit size ${min}–${max} read from "${node.name}" (unit-scope limit); upgraded models counted inside it`);
         if (inGroup) note(unit.name, `model "${node.name}" sits in a choice group; counted as if always present`);
         if ((node.modifiers ?? []).some((m: Node) => m.field !== 'category' && m.type !== 'add'))
           note(unit.name, `model "${node.name}" has modifiers (size/cost may change by Legion or upgrade); base values used`);
@@ -257,6 +263,12 @@ function collectModels(unit: Node): ModelInfo[] {
     }
   };
   walk(unit, false);
+  // A one-model unit whose model has no minimum (e.g. sits in a choice group) still has that model.
+  if (models.length && models.every((m) => m.min === 0) && models.filter((m) => m.max >= 1).length === 1) {
+    const only = models.find((m) => m.max >= 1)!;
+    only.min = 1;
+    note(unit.name, `no model has a minimum; counted as one "${only.node.name}"`);
+  }
   if (!models.length) {
     // Batteries (e.g. Rapier Battery) are made of sub-units ("Rapier Crew", 1–4 at 40 pts),
     // not single models. Count each sub-unit as one element of the unit's size.
@@ -391,7 +403,7 @@ function subFactionOf(unit: Node, models: ModelInfo[]): { subFaction?: string; s
   return names.length ? { subFactions: [...new Set(names)].sort() } : {};
 }
 
-function importUnit(link: Node, catalogueName: string, role: BattlefieldRole, factionFromLink: string | null, armyList: string): UnitDef | undefined {
+function importUnit(link: Node, catalogueName: string, role: BattlefieldRole, factionFromLink: string | null, armyList: string, idSuffix?: string): UnitDef | undefined {
   const unit = resolve(link);
   if (!unit) return undefined;
   const cats = [...(unit.categoryLinks ?? []).map((c: Node) => String(c.name))];
@@ -409,7 +421,7 @@ function importUnit(link: Node, catalogueName: string, role: BattlefieldRole, fa
   if (new Set(variable.map((v) => v.cost)).size > 1)
     note(unit.name, `extra models cost different amounts (${variable.map((v) => `${v.node.name} ${v.cost}`).join(', ')}); ${perExtra} per extra model used`);
   if (hasCostModifier(unit)) note(unit.name, 'unit cost changes under some conditions; base used');
-  const id = slug(unit.name);
+  const id = slug(unit.name) + (idSuffix ? `-${slug(idSuffix)}` : '');
   if (!datasheets[id]) datasheets[id] = datasheetFor(unit, models);
   // Officer of the Line (X): unconditional on the unit → X Auxiliary unlocks from a Command slot.
   // Some catalogues (Mechanicum) carry it as a category on the unit instead of a rule link.
@@ -417,6 +429,10 @@ function importUnit(link: Node, catalogueName: string, role: BattlefieldRole, fa
     datasheets[id]!.rules.find((r) => !r.whenSelected && !r.legions && /^Officer of the Line \((\d+)\)$/.test(r.name))?.name ??
     cats.find((c) => /^Officer of the Line \((\d+)\)$/.test(c));
   const commandAuxUnlocks = officer ? Number(/\((\d+)\)/.exec(officer)![1]) : undefined;
+  // Other unlock-changing rules, when the unit always has them.
+  const always = (re: RegExp) => datasheets[id]!.rules.find((r) => !r.whenSelected && !r.legions && re.test(r.name))?.name;
+  const consul = always(/^Consul-Delegatus$/);
+  const tank = always(/^Tank Commander \((\d+)\)$/);
   const tags = [...new Set(models.flatMap((m) => modelTagsOf(m.node)))];
   return {
     id,
@@ -429,6 +445,8 @@ function importUnit(link: Node, catalogueName: string, role: BattlefieldRole, fa
     ...subFactionOf(unit, models),
     ...((unit.entryLinks ?? []).some((l: Node) => l.name === 'Inductii') || /Inductii/.test(unit.name) ? { rules: ['Inductii'] } : {}),
     ...(commandAuxUnlocks && commandAuxUnlocks > 1 ? { commandAuxUnlocks } : {}),
+    ...(consul ? { commandUnlocksApex: true } : {}),
+    ...(tank ? { tankCommander: Number(/\((\d+)\)/.exec(tank)![1]) } : {}),
     points: { base, minModels, maxModels, perExtraModel: perExtra },
     options: optionsFor(unit.name, id, models, unit),
     source: { book: 'BSData horus-heresy-3rd-edition', version: sha, section: `${catalogueName.trim()} › ${unit.name}` },
@@ -600,6 +618,17 @@ const datasheets: Record<string, Datasheet> = {};
 
 // ── run ─────────────────────────────────────────────────────────────────────
 const units = new Map<string, UnitDef>();
+/**
+ * Names that several catalogues define as *different* units (every Legion has its own
+ * "Inductii Squad"). Those get the Faction in their id (inductii-squad-death-guard) so no
+ * Legion's version overwrites another's. Links to one shared unit keep the plain id.
+ */
+const targetsByName = new Map<string, Set<string>>();
+for (const file of catalogueFiles) {
+  const cat = JSON.parse(readFileSync(join(repo, file), 'utf8')).catalogue;
+  for (const l of cat?.entryLinks ?? []) targetsByName.set(String(l.name), (targetsByName.get(String(l.name)) ?? new Set()).add(String(l.targetId)));
+}
+const perFaction = new Set([...targetsByName].filter(([, t]) => t.size > 1).map(([n]) => n));
 const skippedLinks: string[] = [];
 for (const file of catalogueFiles) {
   const doc = JSON.parse(readFileSync(join(repo, file), 'utf8'));
@@ -623,7 +652,7 @@ for (const file of catalogueFiles) {
       own?.faction ??
       linkCats.map((c) => String(c.name)).find((n) => LEGIONS.includes(n)) ??
       (ownEntries.has(link.targetId) ? catalogueLegion : null);
-    const def = importUnit(link, cat.name, role, faction, armyList);
+    const def = importUnit(link, cat.name, role, faction, armyList, perFaction.has(String(link.name)) ? faction ?? undefined : undefined);
     if (!def) continue;
     const prev = units.get(def.id);
     if (prev && prev.armyList !== def.armyList) note(def.name, `id "${def.id}" is used by two army lists (${prev.armyList}, ${def.armyList}); kept ${prev.armyList}`);

@@ -95,6 +95,52 @@ Status key: ✅ confirmed as written · ⚠️ ambiguous (reading chosen, flagge
 - **Legions may ally other Legions** of the same Allegiance.
 - **Death Guard:** Reaping Host (Troops Prime, Troops, Support, Heavy Assault; no Assault Squads in Troops; Death Guard Primary only). Unnatural Resilience is once per army, for a Death Guard Centurion or "Cataphractii Centurion" (mapped to Centurion in Terminator Armour, **confirm**).
 
+## Legion Additional Detachments (14 Nov 2026)
+
+Every Legion now has its Additional Detachments: "An Army that has a Primary Detachment with the <Legion> Faction may select the following … Detachments using the standard Rules". Layouts and slot restrictions were read from each Legion's Wahapedia page (the chart markup) and compared with BSData's force entries; `test/legion-detachments.test.ts` checks all 28 layouts and builds each detachment for its own Legion (legal) and another (refused).
+
+| Legion | Detachments |
+|---|---|
+| Dark Angels | Ironwing Gauntlet, Dreadwing Cadre, Stormwing Muster, Deathwing Conclave, Ravenwing Lance, Firewing Echelon |
+| Emperor's Children | Primacy Wing, Brotherhood of the Phoenix |
+| Iron Warriors | The Ironfire Cohort, The Hammer of Olympia (Apex; army must include a Warsmith or Perturabo) |
+| White Scars | Chogorian Warband |
+| Space Wolves | Bloodied Claw |
+| Imperial Fists | Siege Gauntlet |
+| Night Lords | Terror Assault, Atramentar Hunt (Apex; only the Atramentar Prime Advantage, now added) |
+| Blood Angels | Revelation Host |
+| Iron Hands | Spearhead Phalanx, Medusan Vanguard |
+| World Eaters | Berserker Cadre, Sons of Bodt |
+| Ultramarines | Primus Demi-company |
+| Death Guard | Reaping Host |
+| Thousand Sons | Prosperine Convocation |
+| Sons of Horus | Supremacy Cadre |
+| Word Bearers | Exalted Conclave |
+| Salamanders | Immolation Covenant |
+| Raven Guard | Decapitation Cadre |
+| Alpha Legion | Headhunter Leviathal |
+
+**Where the sources differ (Wahapedia used):**
+- **Primus Demi-company:** Wahapedia says Apex, BSData says Auxiliary. Encoded as Apex, so it needs a High Command slot. ⚠️ Check the printed Liber.
+- **Primacy Wing** and **Atramentar Hunt:** BSData's composition text says "Recon", but its own slot list and Wahapedia both say Retinue. Encoded as Retinue.
+
+**Other Legion Prime Advantages** besides Atramentar, True Believers, Unnatural Resilience and the Iron Hands one aren't entered yet.
+
+### Rules that change unlocking (BSData Special Rules, 14 Nov 2026)
+
+A sweep of every BSData force entry and every special rule that mentions selecting detachments found these:
+
+| Rule | Units | Effect | Status |
+|---|---|---|---|
+| Tip of the Spear | Master of Descent | Primary includes one → **Planetfall Speartip** once per army (Retinue: Praetorian Command Squad with Jump Packs; ★Elites ×2: Veteran Assault Squads) | ✅ added |
+| Consul-Delegatus | Delegatus, Mounted Delegatus, Autilon Skorr | In a Command slot, may unlock one Apex instead of the Auxiliary; one per army | ✅ added |
+| Tank Commander (X) | Spartan Prometheus Command Tank (2) | In a (High) Command slot, unlocks X Auxiliaries that have only Armour slots (e.g. Armoured Support) | ✅ added. BSData's separate "Tank Commander Armoured Support" (4 Armour) is the same layout as Armoured Support, so it isn't a separate entry. |
+| Harbinger of Chaos | Erebus | Primary includes him → Daemonic Manifestation without an Esoterist | Not added: Daemonic Manifestation's slots need the Daemons list, which isn't imported |
+
+**Seen but out of scope:** Leviathan Armoured Fist / Bastion of Fire and Armoured Command Squadron (only in Leviathan / Armoured Spearhead missions); Ætheric Incursion (Traitor Thousand Sons, Daemons of Tzeentch list); Zone Mortalis Primaries and Cohorts Vagus (other game modes); Solar Auxilia, Imperialis Militia and Legio Custodes detachments (army lists not imported); Blackshields Oaths of Moment.
+
+**Mechanicum, added the same day:** Taghmata Cohort (4 Support) and Apprentice Cadre (★Troops, Troops ×3) Auxiliaries; The Heart of Power (Archimandrite Archmagos: ★Retinue, Retinue ×2, ★Troops ×3) and Iron Phalanx (Macrotek Archmagos: ★Armour ×3, ★Heavy Transport ×3) Apexes. From BSData only. Their "all Troops must take Combat Veterans" / "all must take Prime Conveyor" conditions aren't enforced; Prime Conveyor isn't in the data.
+
 ## Mechanicum (14 Nov 2026)
 
 Read from BSData `Mechanicum.json` and the game system's force entries. Wahapedia's Mechanicum page returned 404, so **none of this is checked against the Liber Mechanicum text**, and the 39 units' points aren't cross-checked either.

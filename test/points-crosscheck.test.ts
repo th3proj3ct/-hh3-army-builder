@@ -22,6 +22,19 @@ const WAHAPEDIA_2026_11_13: [unitId: string, base: number, perExtraModel: number
   ['predator', 100, 0, 1, 1],
   ['land-raider-carrier', 265, 0, 1, 1],
   ['contemptor-dreadnought', 150, 0, 1, 1],
+  // Legion-specific units, read from their Wahapedia unit pages on 14 Nov 2026.
+  ['deathwing-companion-detachment', 175, 30, 5, 10],
+  ['kakophoni-squad', 150, 25, 5, 10],
+  ['golden-keshig', 140, 40, 3, 6],
+  ['phalanx-warder-squad', 200, 18, 10, 20],
+  ['night-raptor-squad', 150, 25, 5, 15],
+  ['medusan-immortals-squad', 95, 15, 5, 20],
+  ['rampager-squad', 135, 22, 5, 15],
+  ['sekhmet-terminator-cabal', 250, 45, 5, 10],
+  ['justaerin-terminator-squad', 275, 50, 5, 10],
+  ['gal-vorbak', 250, 50, 5, 10],
+  ['firedrake-terminator-squad', 250, 45, 5, 10],
+  ['mor-deythan-squad', 175, 30, 5, 10],
 ];
 
 describe('BSData points match Wahapedia', () => {

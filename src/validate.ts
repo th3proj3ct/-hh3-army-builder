@@ -106,7 +106,7 @@ export function validate(roster: Roster, catalog: Catalog): ValidationResult {
   }
   for (const [id, { max, names }] of groupCounts) {
     if (names.length > max)
-      err(id === 'lord-of-war' ? 'DET-MAX-LOW' : 'DET-MAX-WARLORD', `This list has ${names.length} of: ${names.join(', ')}; only ${max} allowed`);
+      err(id === 'lord-of-war' ? 'DET-MAX-LOW' : id === 'warlord' ? 'DET-MAX-WARLORD' : 'DET-MAX-ONCE', `This list has ${names.length} of: ${names.join(', ')}; only ${max} allowed`);
   }
 
   // ── Slots, units, options, primes ────────────────────────────────────────
@@ -333,7 +333,7 @@ export function validate(roster: Roster, catalog: Catalog): ValidationResult {
 
   // ── Unlock links ─────────────────────────────────────────────────────────
   const unitIn = (detId: string, slotId: string) => roster.detachments.find((d) => d.id === detId)?.fills.find((f) => f.slotId === slotId);
-  const slotUse = new Map<string, string[]>();
+  const slotUse = new Map<string, DetachmentDef[]>();
   for (const det of roster.detachments) {
     const def = resolvedDefs.get(det.id);
     if (!def) continue;
@@ -357,7 +357,7 @@ export function validate(roster: Roster, catalog: Catalog): ValidationResult {
     const pslot = parentDef.slots.find((s) => s.id === link.slotId);
     const pfill = unitIn(parent.id, link.slotId);
     const key = `${parent.id}|${link.slotId}`;
-    slotUse.set(key, [...(slotUse.get(key) ?? []), def.name]);
+    slotUse.set(key, [...(slotUse.get(key) ?? []), def]);
 
     if (!['Primary', 'Apex', 'Allied'].includes(parentDef.kind) || !parentDef.grantsUnlocks) {
       err('DET-UNLOCK-SOURCE', `Slots in ${parentDef.name} can't unlock other detachments`, at);
@@ -373,28 +373,41 @@ export function validate(roster: Roster, catalog: Catalog): ValidationResult {
       if (parentDef.kind === 'Allied' && def.kind === 'Apex')
         err('DET-UNLOCK-ALLIED', `An Allied Detachment can only unlock Auxiliary detachments, not ${def.name}`, at);
     } else if (pslot.role === 'Command') {
-      if (def.kind === 'Apex') err('DET-UNLOCK-CMD', `${def.name} is an Apex detachment; it needs a High Command slot, not a Command slot`, at);
+      // Consul-Delegatus: this Command unit may unlock one Apex instead of an Auxiliary.
+      const consul = pfill.primeAdvantage !== 'special-assignment' && unitDefs.get(pfill.unit.unitId)?.commandUnlocksApex;
+      if (def.kind === 'Apex' && !consul) err('DET-UNLOCK-CMD', `${def.name} is an Apex detachment; it needs a High Command slot, not a Command slot`, at);
+      if (def.kind === 'Apex' && consul && parentDef.kind === 'Allied')
+        err('DET-UNLOCK-ALLIED', `An Allied Detachment can only unlock Auxiliary detachments, not ${def.name}`, at);
     } else {
       err('DET-UNLOCK-REQUIRED', `A ${roleLabel(pslot.role)} slot can't unlock detachments; only Command and High Command slots can`, at);
     }
   }
-  for (const [key, names] of slotUse) {
+  for (const [key, kids] of slotUse) {
     const [detId, slotId] = key.split('|') as [string, string];
-    // Officer of the Line (X): a Command slot holding this unit unlocks X Auxiliary detachments.
+    const names = kids.map((k) => k.name);
     const pdet = dets.get(detId);
     const pslot = pdet && resolvedDefs.get(pdet.id)?.slots.find((s) => s.id === slotId);
     const pfill = pdet?.fills.find((f) => f.slotId === slotId);
-    const officer = pslot?.role === 'Command' && pfill?.primeAdvantage !== 'special-assignment' ? unitDefs.get(pfill?.unit?.unitId ?? '') : undefined;
-    const allowance = officer?.commandAuxUnlocks ?? 1;
-    if (names.length > allowance)
-      err(
-        'DET-UNLOCK-ONE',
-        allowance > 1
-          ? `${officer!.name} (Officer of the Line (${allowance})) unlocks ${allowance} Auxiliary detachments, but ${names.length} are linked to it (${names.join(', ')})`
-          : `One slot is being used to unlock ${names.length} detachments (${names.join(', ')}); each slot unlocks one`,
-        { detachmentId: detId, slotId },
-      );
+    const unit = pfill?.primeAdvantage !== 'special-assignment' ? unitDefs.get(pfill?.unit?.unitId ?? '') : undefined;
+    // Officer of the Line (X): a Command slot holding this unit unlocks X Auxiliary detachments.
+    const officer = pslot?.role === 'Command' ? unit?.commandAuxUnlocks ?? 1 : 1;
+    // Tank Commander (X): a (High) Command slot unlocks X Auxiliaries, if every one has only Armour slots.
+    const tanksOnly = kids.every((k) => k.kind === 'Auxiliary' && k.slots.every((s) => s.role === 'Armour'));
+    const tank = unit?.tankCommander && tanksOnly ? unit.tankCommander : 0;
+    const allowance = Math.max(officer, tank);
+    if (names.length > allowance) {
+      const why =
+        unit?.tankCommander && !tanksOnly && names.length <= unit.tankCommander
+          ? `${unit.name} (Tank Commander (${unit.tankCommander})) unlocks ${unit.tankCommander} Auxiliary detachments only if each has only Armour slots (${names.join(', ')})`
+          : allowance > 1
+            ? `${unit!.name} (${tank >= officer ? `Tank Commander (${allowance})` : `Officer of the Line (${allowance})`}) unlocks ${allowance} Auxiliary detachments, but ${names.length} are linked to it (${names.join(', ')})`
+            : `One slot is being used to unlock ${names.length} detachments (${names.join(', ')}); each slot unlocks one`;
+      err('DET-UNLOCK-ONE', why, { detachmentId: detId, slotId });
+    }
   }
+  // Consul-Delegatus: "An Army may not include more than one Model with this Special Rule."
+  const consuls = resolved.filter((u) => u.def.commandUnlocksApex);
+  if (consuls.length > 1) err('ARMY-CONSUL-ONE', `The army has ${consuls.length} Consul-Delegatus units (${consuls.map((u) => u.def.name).join(', ')}); only one is allowed`);
 
   // Root of each detachment (Primary or Allied) + cycle detection.
   const rootOf = new Map<string, DetachmentInstance | null>();
@@ -462,7 +475,7 @@ export function validate(roster: Roster, catalog: Catalog): ValidationResult {
     if (req.kind === 'minPointsLimit' && def.kind === 'Warlord') return 'WARLORD-MIN-LIMIT';
     if (req.kind === 'detachmentIncludesModelTag' && req.tag === 'Paragon') return 'WARLORD-PARAGON';
     if (req.kind === 'riteOfWar') return 'ARMY-RITE-SCOPE';
-    if (req.kind === 'unlockedByUnit') return 'DET-UNLOCK-SPECIFIC';
+    if (req.kind === 'unlockedByUnit' || req.kind === 'primaryIncludesUnit') return 'DET-UNLOCK-SPECIFIC';
     return 'DET-REQUIREMENT';
   };
   for (const det of roster.detachments) {
@@ -491,6 +504,11 @@ export function validate(roster: Roster, catalog: Catalog): ValidationResult {
         case 'armyIncludesUnit':
           if (!req.unitIds.some((id) => allUnitIds.has(id))) fail(`${def.name} needs ${name(req.unitIds)} somewhere in the army`);
           break;
+        case 'primaryIncludesUnit': {
+          const inPrimary = resolved.some((u) => u.det === primary && req.unitIds.includes(u.def.id));
+          if (!inPrimary) fail(`${def.name} needs ${name(req.unitIds)} in the Primary Detachment`);
+          break;
+        }
         case 'detachmentIncludesUnit':
           if (!units.some((u) => req.unitIds.includes(u.def.id))) fail(`${def.name} must include ${name(req.unitIds)}`);
           break;

@@ -46,7 +46,7 @@ function deathGuard(tweak: (parts: Record<string, DetachmentInstance>, r: Roster
       Command3: u('centurion'),
       Troops1: { unit: u('tactical-squad', { models: 20 }), prime: 'master-sergeant' },
       Troops2: u('tactical-squad'),
-      Troops3: u('inductii-squad'),
+      Troops3: u('inductii-squad-death-guard'),
       Transport1: u('rhino'),
       Transport2: u('rhino'),
     }),
@@ -133,13 +133,17 @@ describe('Death Guard armoury (imported from BSData Legion-gated entries)', () =
   const opts = (unitId: string) => byId.get(unitId)!.options;
   const ARMOURY = ['Power scythe', 'Alchem caster', 'Alchem combi-flamer', 'Alchem flamer', 'Heavy alchem flamer', 'Heavy Alchem flamers'];
 
-  it('every Legion-gated option is a Death Guard armoury item, gated to Death Guard only', () => {
-    const gated = CATALOG.units.flatMap((u) => u.options.filter((o) => o.factionTraits));
+  it('every Death Guard-only option on a generic unit is a Death Guard armoury item', () => {
+    const gated = CATALOG.units
+      .filter((u) => u.factionTrait === null)
+      .flatMap((u) => u.options.filter((o) => o.factionTraits?.length === 1 && o.factionTraits[0] === 'Death Guard'));
     expect(gated.length).toBeGreaterThan(100);
-    for (const o of gated) {
-      expect(o.factionTraits).toEqual(['Death Guard']);
-      expect(ARMOURY).toContain(o.name.split(': ').pop());
-    }
+    for (const o of gated) expect(ARMOURY).toContain(o.name.split(': ').pop());
+  });
+
+  it('Legion-gated options name only real Legions', () => {
+    const legions = new Set(CATALOG.armyLists.find((l) => l.id === 'legiones-astartes')!.factionChoices);
+    for (const o of CATALOG.units.flatMap((u) => u.options)) for (const f of o.factionTraits ?? []) expect(legions).toContain(f);
   });
 
   it('a Death Guard Sergeant can take an alchem combi-flamer (+10)', () => {
@@ -162,9 +166,10 @@ describe('Death Guard armoury (imported from BSData Legion-gated entries)', () =
     expect(opts('tactical-squad').find((o) => o.id === 'sergeant--power-scythe')?.cost.points).toBe(20);
   });
 
-  it('other Legions\' hidden options (Thousand Sons cults) are not imported as generic options', () => {
+  it('other Legions\' hidden options (Thousand Sons cults) are only offered to Thousand Sons', () => {
     const cults = CATALOG.units.flatMap((u) => u.options).filter((o) => /^(Athanaean|Corvidae|Pavoni|Pyrae|Raptora)$/.test(o.name.split(': ').pop()!));
-    expect(cults).toEqual([]);
+    expect(cults.length).toBeGreaterThan(0);
+    for (const o of cults) expect(o.factionTraits).toEqual(['Thousand Sons']);
   });
 
   it('Terminators no longer list a paid combi-bolter they already carry for free', () => {

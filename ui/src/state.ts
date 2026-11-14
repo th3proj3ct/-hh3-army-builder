@@ -99,8 +99,31 @@ export function setSubFaction(s: BuilderState, detId: string, slotId: string, su
 export function unlockAllowance(det: DetachmentInstance, slot: SlotDef): number {
   const fill = fillOf(det, slot.id);
   if (!fill?.unit || fill.primeAdvantage === 'special-assignment') return 0;
-  if (slot.role !== 'Command') return 1;
-  return unitDefs.get(fill.unit.unitId)?.commandAuxUnlocks ?? 1;
+  const u = unitDefs.get(fill.unit.unitId);
+  const officer = slot.role === 'Command' ? u?.commandAuxUnlocks ?? 1 : 1;
+  // Tank Commander (X): X Auxiliaries, as long as each has only Armour slots.
+  return Math.max(officer, u?.tankCommander ?? 0);
+}
+
+const NUMBER_WORDS: Record<number, string> = { 1: 'one', 2: 'two', 3: 'three', 4: 'four' };
+/**
+ * What this filled slot can unlock, in words: "can unlock one Apex or one Auxiliary detachment",
+ * plus Officer of the Line, Tank Commander and Consul-Delegatus variations.
+ */
+export function unlockSummary(det: DetachmentInstance, slot: SlotDef, used: number): string {
+  const fill = fillOf(det, slot.id);
+  if (fill?.primeAdvantage === 'special-assignment') return 'is on Special Assignment, so it unlocks nothing.';
+  const u = fill?.unit && unitDefs.get(fill.unit.unitId);
+  const n = (x: number) => NUMBER_WORDS[x] ?? String(x);
+  const parts: string[] = [];
+  const allied = detDefs.get(det.defId)?.kind === 'Allied';
+  if (slot.role === 'HighCommand') parts.push(allied ? 'one Auxiliary detachment' : 'one Apex or one Auxiliary detachment');
+  else if (u?.commandUnlocksApex && !allied) parts.push('one Auxiliary detachment, or one Apex instead (Consul-Delegatus)');
+  else if (slot.role === 'Command' && (u?.commandAuxUnlocks ?? 1) > 1) parts.push(`${n(u!.commandAuxUnlocks!)} Auxiliary detachments (Officer of the Line (${u!.commandAuxUnlocks}))`);
+  else parts.push('one Auxiliary detachment');
+  if (u?.tankCommander) parts.push(`${n(u.tankCommander)} Armour-only Auxiliaries such as Armoured Support (Tank Commander (${u.tankCommander}))`);
+  const allowance = unlockAllowance(det, slot);
+  return `can unlock ${parts.join(', or ')}${allowance > 1 && used ? ` · ${used} of ${allowance} used` : ''}.`;
 }
 
 /** Can this filled slot unlock a detachment (ignoring whether it already has)? */
@@ -241,9 +264,11 @@ export function planWithCommander(
   preferDetId?: string,
 ): { state: BuilderState; unitId: string; parentDetId: string; slotId: string; newDetId: string } | null {
   const def = detDefs.get(defId);
-  const req = def?.requirements.find((r) => r.kind === 'unlockedByUnit');
-  if (!def || !req || req.kind !== 'unlockedByUnit') return null;
-  if (req.allegiance && req.allegiance !== s.roster.allegiance) return null;
+  const req = def?.requirements.find((r) => r.kind === 'unlockedByUnit' || r.kind === 'primaryIncludesUnit');
+  if (!def || !req || (req.kind !== 'unlockedByUnit' && req.kind !== 'primaryIncludesUnit')) return null;
+  if (req.kind === 'unlockedByUnit' && req.allegiance && req.allegiance !== s.roster.allegiance) return null;
+  // "Primary Detachment includes X" (Planetfall Speartip ← Master of Descent): X goes in the Primary.
+  const primaryOnly = req.kind === 'primaryIncludesUnit';
   const unitId = req.unitIds.find((id) => {
     const u = unitDefs.get(id);
     return u && (u.allegiance === 'Any' || u.allegiance === s.roster.allegiance);
@@ -255,11 +280,12 @@ export function planWithCommander(
     const pdef = detDefs.get(parent.defId);
     if (!pdef?.grantsUnlocks || !['Primary', 'Apex', 'Allied'].includes(pdef.kind)) continue;
     if (def.kind === 'Apex' && pdef.kind === 'Allied') continue;
+    if (primaryOnly && pdef.kind !== 'Primary') continue;
     const free = slotsOf(parent).find((sl) => sl.role === unit.role && canUnlock(parent, sl) && !fillOf(parent, sl.id)?.unit && !sl.restriction);
     if (!free) continue;
     let placed = placeUnit(s, parent.id, free.id, unitId);
     // A sub-faction Apex (Command Maniple ← Cybernetica Archmagos): give the commander that sub-faction.
-    if (req.subFaction && unit.subFactions?.includes(req.subFaction)) placed = setSubFaction(placed, parent.id, free.id, req.subFaction);
+    if (req.kind === 'unlockedByUnit' && req.subFaction && unit.subFactions?.includes(req.subFaction)) placed = setSubFaction(placed, parent.id, free.id, req.subFaction);
     const added = addDetachment(placed, defId, { detachmentId: parent.id, slotId: free.id });
     return { state: added.state, unitId, parentDetId: parent.id, slotId: free.id, newDetId: added.id };
   }
@@ -345,10 +371,27 @@ export function setAlliedFaction(s: BuilderState, detId: string, legion: string)
 
 // ── persistence (per-viewer convenience only) ─────────────────────────────
 const KEY = 'hh3-builder-state-v1';
+/**
+ * Units whose id gained a Faction suffix when every Legion's version was imported
+ * (inductii-squad → inductii-squad-death-guard): point saved lists at the new id.
+ */
+export function migrate(s: BuilderState): BuilderState {
+  const slug = (x: string) => x.toLowerCase().replace(/[’']/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const fix = (u: UnitInstance): UnitInstance => {
+    if (unitDefs.has(u.unitId)) return u;
+    const owner = u.factionTrait ?? s.primaryLegion;
+    const renamed = `${u.unitId}-${slug(owner)}`;
+    return unitDefs.has(renamed) ? { ...u, unitId: renamed } : u;
+  };
+  return {
+    ...s,
+    roster: { ...s.roster, detachments: s.roster.detachments.map((d) => ({ ...d, fills: d.fills.map((f) => (f.unit ? { ...f, unit: fix(f.unit) } : f)) })) },
+  };
+}
 export function load(): BuilderState | null {
   try {
     const raw = localStorage.getItem(KEY);
-    return raw ? (JSON.parse(raw) as BuilderState) : null;
+    return raw ? migrate(JSON.parse(raw) as BuilderState) : null;
   } catch {
     return null;
   }

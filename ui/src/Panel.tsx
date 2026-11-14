@@ -17,6 +17,7 @@ import {
   planWithCommander,
   planWithSubFaction,
   unlockAllowance,
+  unlockSummary,
   childrenOf,
   extraSlotRoles,
   factionForDetachment,
@@ -412,13 +413,7 @@ function DetachmentPicker({ props, det, slot }: { props: Props; det: DetachmentI
     <div>
       <h3>Unlock a detachment</h3>
       <p className="hint">
-        {unitName} in {slotLabel(det, slot)} ({roleLabel(slot.role)}) can unlock{' '}
-        {slot.role === 'HighCommand'
-          ? 'one Apex or one Auxiliary detachment'
-          : unlockAllowance(det, slot) > 1
-            ? `${unlockAllowance(det, slot)} Auxiliary detachments (Officer of the Line (${unlockAllowance(det, slot)}))${childrenOf(state.roster, det.id, slot.id).length ? `; ${childrenOf(state.roster, det.id, slot.id).length} already unlocked` : ''}`
-            : 'one Auxiliary detachment'}
-        . Use ▸ for details and + to add.
+        {unitName} in {slotLabel(det, slot)} ({roleLabel(slot.role)}) {unlockSummary(det, slot, childrenOf(state.roster, det.id, slot.id).length).replace(/.$/, '')}. Use ▸ for details and + to add.
       </p>
       <input
         className="search"

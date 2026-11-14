@@ -1,0 +1,41 @@
+# Builds the army builder and publishes it to GitHub Pages on every push to master.
+# One-time setup on GitHub: Settings → Pages → Source: GitHub Actions.
+# The site is then at https://<user>.github.io/<repo>/ (asset paths are relative, so the sub-path works).
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # A failing test stops the deploy, so a broken validator never goes live.
+      - run: npm test
+      # Personal role icons (ui/role-icons/*.png) are gitignored and never built in.
+      - run: npm run build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist-ui
+      - id: deployment
+        uses: actions/deploy-pages@v4

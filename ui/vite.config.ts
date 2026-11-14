@@ -7,6 +7,8 @@ export default defineConfig(({ command }) => ({
   // Polling: on Windows the native watcher sometimes misses an edit that lands right after
   // another, leaving the dev server serving a stale module (seen as blank-page crashes).
   server: { port: 5178, fs: { allow: ['..'] }, watch: { usePolling: true, interval: 150 } },
+  // Relative asset paths, so the built app works from any folder or sub-path (GitHub Pages, Netlify…).
+  base: './',
   build: { outDir: '../dist-ui', emptyOutDir: true },
   define: {
     // User-supplied role icons (ui/role-icons/): always in dev, only on request in builds,

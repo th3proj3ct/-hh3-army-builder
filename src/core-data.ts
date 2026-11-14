@@ -106,7 +106,28 @@ export const CORE_DETACHMENTS: DetachmentDef[] = [
   apex('army-vanguard', 'Army Vanguard', ['Elites*', 'Elites', 'Elites']),
 ];
 
-/** A representative sample of Legion detachments, to exercise every requirement kind. */
+/** An Auxiliary that only a specific unit in a Command slot can unlock. */
+function specificAux(
+  id: string,
+  name: string,
+  spec: string[],
+  unlockedBy: string[],
+  restrict?: Partial<Record<BattlefieldRole, SlotDef['restriction']>>,
+  allegiance?: 'Traitor' | 'Loyalist',
+): DetachmentDef {
+  return {
+    id,
+    name,
+    kind: 'Auxiliary',
+    slots: slots(id, spec, restrict),
+    armyListRule: 'linked',
+    requirements: [{ kind: 'unlockedByUnit', unitIds: unlockedBy, ...(allegiance ? { allegiance } : {}), source: lib(name) }],
+    grantsUnlocks: false,
+    source: lib(`Legiones Astartes Auxiliary Detachments › ${name}`),
+  };
+}
+
+/** Legiones Astartes detachments, plus Legion-specific samples exercising every requirement kind. */
 export const ASTARTES_DETACHMENTS: DetachmentDef[] = [
   {
     id: 'maelstrom-sentry-battery',
@@ -121,10 +142,39 @@ export const ASTARTES_DETACHMENTS: DetachmentDef[] = [
     grantsUnlocks: false,
     source: lib('Legiones Astartes Detachment › Maelstrom Sentry Battery'),
   },
+  // ── Legiones Astartes Auxiliary Detachments (Wahapedia, re-read 13 Nov 2026) ──
+  // Specific-unit unlocks: the named unit in a Command slot may add this detachment
+  // "instead of the options available in the Crusade Force Organisation Chart".
+  specificAux('daemonic-manifestation', 'Daemonic Manifestation', ['HeavyAssault', 'HeavyAssault', 'HeavyAssault'], ['esoterist'], {
+    // From the Daemons of the Ruinstorm list, which isn't imported yet, so these slots can't be filled here.
+    HeavyAssault: { unitIds: ['ruinstorm-daemon-brutes'], armyList: 'daemons-of-the-ruinstorm', source: lib('Daemonic Manifestation') },
+  }, 'Traitor'),
+  specificAux('veteran-cadre', 'Veteran Cadre', ['Retinue', 'Elites', 'HeavyTransport'], ['legion-champion']),
+  specificAux('recon-demi-company', 'Recon Demi-company', ['Recon*', 'Recon', 'Recon', 'FastAttack'], ['vigilator'], {
+    Recon: { unitIds: ['reconnaissance-squad'], source: lib('Recon Demi-company') },
+  }),
+  specificAux('storm-battery', 'Storm Battery', ['Support', 'Support', 'Armour', 'Armour'], ['siege-breaker'], {
+    Support: { unitIds: ['rapier-battery'], source: lib('Storm Battery') },
+    Armour: { unitIds: ['arquitor-bombard', 'vindicator-siege-tank'], source: lib('Storm Battery') },
+  }),
+  specificAux('dreadnought-talon', 'Dreadnought Talon', ['WarEngine', 'WarEngine', 'WarEngine'], ['mortificator', 'mortificator-in-terminator-armour'], {
+    WarEngine: { unitIds: ['contemptor-dreadnought'], source: lib('Dreadnought Talon') },
+  }),
   {
-    // UNLOCK CONDITION UNCONFIRMED: Wahapedia shows the slot restriction but no
-    // "When an X Unit is selected…" sentence. Encoded as a normal Auxiliary until checked
-    // against the printed Liber. See docs/RULES.md › U-4.
+    id: 'techmarine-covenant',
+    name: 'Techmarine Covenant',
+    kind: 'Auxiliary',
+    slots: slots('techmarine-covenant', ['Support*', 'Support', 'Support', 'Support', 'Support', 'Support'], {
+      Support: { unitIds: ['techmarine'], source: lib('Techmarine Covenant') },
+    }),
+    armyListRule: 'linked',
+    requirements: [],
+    grantsUnlocks: false,
+    source: lib('Legiones Astartes Auxiliary Detachments › Techmarine Covenant'),
+  },
+  {
+    // No specific-unit unlock: Wahapedia gives none and BSData only requires a Legion
+    // Primary, so it's taken with any Command/High Command unlock (project decision).
     id: 'apothecarion-delegation',
     name: 'Apothecarion Delegation',
     kind: 'Auxiliary',
@@ -210,6 +260,57 @@ export const DEATH_GUARD_DETACHMENTS: DetachmentDef[] = [
     grantsUnlocks: false,
     source: lib('Death Guard › Additional Detachment › Reaping Host'),
   },
+];
+
+/**
+ * Mechanicum Apex detachments. Slot layouts and unlocks are read from BSData's force
+ * entries (the "Detachment Composition" profiles and the "Archmagos is <sub-faction>"
+ * conditions), not from the Liber Mechanicum text, which wasn't available to check.
+ * Each is unlocked by an Archmagos of one sub-faction in a High Command slot.
+ */
+const mech = (section: string): SourceRef => ({ book: 'Liber Mechanicum (via BSData horus-heresy-3rd-edition)', section });
+const ARCHMAGI = ['archmagos', 'archmagos-on-abeyant'];
+function mechApex(
+  id: string,
+  name: string,
+  spec: string[],
+  subFaction: string,
+  restrict: Partial<Record<BattlefieldRole, Omit<NonNullable<SlotDef['restriction']>, 'source'>>>,
+  grantsUnlocks = true,
+): DetachmentDef {
+  const source = mech(`Apex Detachments › ${name}`);
+  const withSource = Object.fromEntries(Object.entries(restrict).map(([role, r]) => [role, { ...r, source }]));
+  return {
+    id,
+    name,
+    kind: 'Apex',
+    slots: slots(id, spec, withSource),
+    armyListRule: 'linked',
+    armyLists: ['mechanicum'],
+    requirements: [{ kind: 'unlockedByUnit', unitIds: ARCHMAGI, subFaction, source }],
+    grantsUnlocks,
+    source,
+  };
+}
+export const MECHANICUM_DETACHMENTS: DetachmentDef[] = [
+  mechApex('command-maniple', 'Command Maniple', ['Elites*', 'Support*', 'WarEngine*'], 'Cybernetica', {
+    Elites: { modelTag: 'Automata' }, Support: { modelTag: 'Automata' }, WarEngine: { modelTag: 'Automata' },
+  }),
+  mechApex('panoply-of-cruelty', 'The Panoply of Cruelty', ['HeavyAssault*', 'HeavyAssault*', 'HeavyAssault*'], 'Lacrymaerta', {
+    HeavyAssault: { unitIds: ['ursarax-cohort'] },
+  }),
+  mechApex('host-of-destruction', 'The Host of Destruction', ['Elites*', 'Elites', 'Elites', 'Elites'], 'Myrmidax', {
+    Elites: { subFaction: 'Myrmidax' },
+  }),
+  // "these do not grant additional Auxiliary Detachments and must form a single Unit":
+  // the first half is grantsUnlocks: false; the single-unit part isn't checked (see RULES.md).
+  mechApex('crux-of-judgement', 'Crux of Judgement', ['Command', 'Command', 'Command'], 'Malagra', {
+    Command: { unitIds: ['arcuitor-magisterium'] },
+  }, false),
+  // "must include a Praetorian": unit composition isn't modelled, so it isn't checked.
+  mechApex('thallax-command-cohort', 'Thallax Command Cohort', ['Support*', 'Support*', 'Support*'], 'Reductor', {
+    Support: { unitIds: ['thallax-cohort'] },
+  }),
 ];
 
 export const DEATH_GUARD_PRIME_ADVANTAGES: PrimeAdvantageDef[] = [

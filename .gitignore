@@ -2,3 +2,7 @@ node_modules/
 coverage/
 *.log
 dist-ui/
+
+# Your own role icon images (never committed; see ui/role-icons/README.md)
+ui/role-icons/*
+!ui/role-icons/README.md

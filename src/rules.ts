@@ -17,6 +17,7 @@ export const AOD: SourceRef = { book: 'Age of Darkness Rulebook', version: '1.2'
 const aod = (section: string): SourceRef => ({ ...AOD, section });
 const faq = (section: string): SourceRef => ({ book: 'Age of Darkness Rulebook FAQ', section, faq: true });
 const astartes = (section: string): SourceRef => ({ book: 'Liber Astartes / Liber Hereticus', version: '1.1', section });
+const mech = (section: string): SourceRef => ({ book: 'Liber Mechanicum (via BSData horus-heresy-3rd-edition)', section });
 
 export type RuleStatus = 'confirmed' | 'ambiguous' | 'unconfirmed';
 
@@ -61,11 +62,15 @@ export const RULES = Object.fromEntries(
     r('UNIT-MODEL-COUNT', 'Unit size must be within the profile\'s minimum and maximum', aod('Selecting Units for Detachments')),
     r('UNIT-FACTION-TRAIT', "A '[Legiones Astartes]' unit must be given one Legion Faction trait", astartes('Building a Space Marine Army')),
     r('DET-SINGLE-FACTION', 'All units in a detachment must share one Faction trait unless a rule says otherwise', astartes('Building a Space Marine Army')),
+    r('UNIT-SUB-FACTION', 'A Mechanicum unit that offers a sub-faction (Cybernetica, Myrmidax…) must take exactly one; fixed ones can\'t change', mech('Mechanicum - Sub-faction')),
+    r('DET-SINGLE-SUBFACTION', 'All units in a detachment must share one Mechanicum sub-faction', mech('Mechanicum Traits'), 'ambiguous',
+      'Read from BSData\'s "Multiple Mechanicum Traits in Detachment" check, not from the Liber Mechanicum text (not available to check). Units without a sub-faction (none in BSData today) never clash.'),
+    r('DET-ARMY-LIST', 'Army-list detachments (e.g. Legiones Astartes Auxiliaries, Mechanicum Apexes) only for their own list', { book: 'Liber Astartes / Liber Mechanicum', section: 'Detachments' }),
     // ── Detachment counts and links ─────────────────────────────────────────
     r('DET-UNLOCK-REQUIRED', 'Apex and Auxiliary detachments must be unlocked by a filled Command or High Command slot', aod('Detachment Types › Adding Detachments to an Army')),
     r('DET-UNLOCK-HC', 'A High Command slot unlocks one Apex OR one Auxiliary detachment, not both', aod('Detachment Types › Apex Detachments')),
     r('DET-UNLOCK-CMD', 'A Command slot unlocks one Auxiliary detachment (never an Apex)', aod('Detachment Types › Primary Detachments')),
-    r('DET-UNLOCK-ONE', 'Each Command/High Command slot unlocks at most one detachment', aod('Detachment Types › Primary Detachments')),
+    r('DET-UNLOCK-ONE', 'Each Command/High Command slot unlocks one detachment (Officer of the Line (X) units in a Command slot: X Auxiliaries)', aod('Detachment Types › Primary Detachments; Special Rules › Officer of the Line (X)')),
     r('DET-UNLOCK-SOURCE', 'Only Primary, Apex and Allied detachments can unlock further detachments', aod('Detachment Types › Primary / Apex / Allied Detachments'), 'ambiguous',
       'The FOC summary says slots filled "in any Detachment" count, but the per-type text only grants unlocks to Primary, Apex and Allied. No core Auxiliary has Command slots, so this only matters for future detachments.'),
     r('DET-UNLOCK-ALLIED', 'An Allied detachment can only unlock Auxiliary detachments, linked to that Allied detachment', aod('Detachment Types › Allied Detachments')),

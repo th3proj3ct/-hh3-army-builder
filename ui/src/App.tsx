@@ -8,7 +8,7 @@ import { Reference } from './Reference';
 import { Panel } from './Panel';
 import { PointsBar } from './PointsBar';
 import { deathGuardSample } from './samples';
-import { LEGIONS, emptyState, load, save, setPrimaryLegion, type BuilderState } from './state';
+import { FACTIONS, armyListOf, emptyState, load, save, setPrimaryLegion, type BuilderState } from './state';
 
 export type Selection =
   | { kind: 'slot'; detId: string; slotId: string }
@@ -91,11 +91,26 @@ export function App() {
         </nav>
         <div className="settings">
           <label>
-            Legion
-            <select value={state.primaryLegion} onChange={(e) => commit(setPrimaryLegion(state, e.target.value), `Primary Legion set to ${e.target.value}`)}>
-              {LEGIONS.map((l) => (
-                <option key={l}>{l}</option>
-              ))}
+            Faction
+            <select
+              value={state.primaryLegion}
+              onChange={(e) => {
+                const to = e.target.value;
+                const fresh = armyListOf(to) !== armyListOf(state.primaryLegion);
+                commit(setPrimaryLegion(state, to), fresh ? `Started a new ${to} list (different army list; Undo brings the old one back)` : `Primary Legion set to ${to}`);
+                if (fresh) setSel(null);
+              }}
+            >
+              <optgroup label="Legiones Astartes">
+                {FACTIONS.filter((f) => armyListOf(f) === 'legiones-astartes').map((l) => (
+                  <option key={l}>{l}</option>
+                ))}
+              </optgroup>
+              <optgroup label="Other army lists">
+                {FACTIONS.filter((f) => armyListOf(f) !== 'legiones-astartes').map((l) => (
+                  <option key={l}>{l}</option>
+                ))}
+              </optgroup>
             </select>
           </label>
           <label>

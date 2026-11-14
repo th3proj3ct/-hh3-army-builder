@@ -78,6 +78,15 @@ export interface UnitDef {
   modelTags: ModelTag[];
   /** Special rules that matter at list-building time (e.g. "Inductii"). */
   rules?: string[];
+  /**
+   * Officer of the Line (X): in a Command slot, this unit lets you take X Auxiliary
+   * Detachments from that slot instead of one.
+   */
+  commandAuxUnlocks?: number;
+  /** Mechanicum sub-faction fixed by the profile (e.g. Castellax are Cybernetica). */
+  subFaction?: string;
+  /** Sub-factions the player must choose one of for this unit (e.g. a Magos). */
+  subFactions?: string[];
   points: {
     base: number; // cost for `minModels`
     minModels: number;
@@ -117,6 +126,8 @@ export interface OptionDef {
   factionTraits?: string[];
   /** List-building effects. `setRole` is a HOOK — see RULES.md › U-2. */
   effects?: OptionEffect[];
+  /** Display only: which model takes it, the item itself, and the default item it replaces (exchanges). */
+  display?: { model?: string; item: string; replaces?: string };
 }
 
 export type OptionEffect =
@@ -134,6 +145,10 @@ export interface SlotRestriction {
   nameContainsDetachmentChoice?: boolean;
   /** Overrides the detachment's army list for this slot (e.g. Daemonic Manifestation). */
   armyList?: string;
+  /** Unit must contain a model of this type, e.g. Command Maniple: "Automata only". */
+  modelTag?: ModelTag;
+  /** Unit's Mechanicum sub-faction must be this, e.g. Host of Destruction: "Myrmidax only". */
+  subFaction?: string;
   source: SourceRef;
 }
 
@@ -161,6 +176,8 @@ export type DetachmentRequirement =
       kind: 'unlockedByUnit';
       unitIds: string[];
       allegiance?: Allegiance;
+      /** The unlocking unit must also have this sub-faction (Mechanicum Apex: "an Archmagos with Cybernetica"). */
+      subFaction?: string;
       source: SourceRef;
     };
 
@@ -188,6 +205,8 @@ export interface DetachmentDef {
   choice?: { label: string; options: string[] };
   /** Units in this detachment may carry different Faction traits (e.g. Shattered Legions). */
   mixedFactions?: boolean;
+  /** Only for these army lists (e.g. Legiones Astartes detachments). Absent = any list (core). */
+  armyLists?: string[];
   source: SourceRef;
 }
 
@@ -283,6 +302,8 @@ export interface UnitInstance {
   options: OptionSelection[];
   /** Required when the profile's factionTrait is a placeholder. */
   factionTrait?: string;
+  /** Required when the profile offers `subFactions` (Mechanicum). */
+  subFaction?: string;
 }
 
 export interface SlotFill {

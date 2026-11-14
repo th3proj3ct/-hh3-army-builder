@@ -45,6 +45,8 @@ interface ResolvedUnit {
   role: BattlefieldRole; // after option effects
   tags: Set<ModelTag>;
   faction: string | undefined;
+  /** Mechanicum sub-faction: fixed by the profile or chosen on the unit. */
+  subFaction: string | undefined;
   points: number;
 }
 
@@ -116,6 +118,8 @@ export function validate(roster: Roster, catalog: Catalog): ValidationResult {
     if (!def) continue;
     const at = { detachmentId: det.id };
     if (!det.fills.some((f) => f.unit)) err('ARMY-DETACHMENT-NOT-EMPTY', `${def.name} has no units in it`, at);
+    if (def.armyLists && !def.armyLists.includes(det.armyList))
+      err('DET-ARMY-LIST', `${def.name} is only for the ${def.armyLists.map((l) => listDefs.get(l)?.name ?? l).join('/')} list, not ${listDefs.get(det.armyList)?.name ?? det.armyList}`, at);
 
     const slotById = new Map<string, SlotDef>(def.slots.map((s) => [s.id, s]));
     const fillBySlot = new Map<string, SlotFill>();
@@ -181,8 +185,22 @@ export function validate(roster: Roster, catalog: Catalog): ValidationResult {
       if (role !== slot.role && !specialAssigned)
         err('SLOT-ROLE-MATCH', `${udef.name} is ${article(role)} ${roleLabel(role)} unit and can't fill ${article(slot.role)} ${roleLabel(slot.role)} slot`, uat);
 
+      // Sub-faction (Mechanicum): fixed by the profile, or one of the profile's choices.
+      let subFaction: string | undefined = udef.subFaction;
+      if (udef.subFactions) {
+        if (!inst.subFaction) err('UNIT-SUB-FACTION', `${udef.name} needs a sub-faction chosen (${udef.subFactions.join(', ')})`, uat);
+        else if (!udef.subFactions.includes(inst.subFaction)) err('UNIT-SUB-FACTION', `"${inst.subFaction}" isn't a sub-faction ${udef.name} can take`, uat);
+        else subFaction = inst.subFaction;
+      } else if (inst.subFaction && inst.subFaction !== udef.subFaction) {
+        err('UNIT-SUB-FACTION', udef.subFaction ? `${udef.name} is always ${udef.subFaction}; its sub-faction can't be changed` : `${udef.name} has no sub-faction to choose`, uat);
+      }
+
       // Slot restrictions.
       const rs = slot.restriction;
+      if (rs?.modelTag && !tags.has(rs.modelTag))
+        err(det.extraSlots.some((x) => x.id === slot.id) ? 'SLOT-RESTRICTION-EXTRA' : 'SLOT-RESTRICTION', `${roleLabel(slot.role)} slots in ${def.name} only take ${rs.modelTag} units`, uat);
+      if (rs?.subFaction && subFaction !== rs.subFaction)
+        err(det.extraSlots.some((x) => x.id === slot.id) ? 'SLOT-RESTRICTION-EXTRA' : 'SLOT-RESTRICTION', `${roleLabel(slot.role)} slots in ${def.name} only take ${rs.subFaction} units`, uat);
       if (rs?.unitIds && !rs.unitIds.includes(udef.id))
         err(det.extraSlots.some((x) => x.id === slot.id) ? 'SLOT-RESTRICTION-EXTRA' : 'SLOT-RESTRICTION',
           `${roleLabel(slot.role)} slots in ${def.name} only take: ${rs.unitIds.map((id) => unitDefs.get(id)?.name ?? id).join(', ')}`, uat);
@@ -282,13 +300,16 @@ export function validate(roster: Roster, catalog: Catalog): ValidationResult {
         }
       }
 
-      resolved.push({ inst, def: udef, det, detDef: def, slotId: fill.slotId, role, tags, faction, points: unitPoints(inst, udef) });
+      resolved.push({ inst, def: udef, det, detDef: def, slotId: fill.slotId, role, tags, faction, subFaction, points: unitPoints(inst, udef) });
     }
 
     // Single Faction per detachment.
     const factions = new Set(resolved.filter((u) => u.det === det && u.faction).map((u) => u.faction!));
     if (factions.size > 1 && !def.mixedFactions)
       err('DET-SINGLE-FACTION', `${def.name} mixes Factions (${[...factions].join(', ')}); a detachment uses one`, at);
+    // One sub-faction per detachment (BSData: "Multiple Mechanicum Traits in Detachment").
+    const subs = new Set(resolved.filter((u) => u.det === det && u.subFaction).map((u) => u.subFaction!));
+    if (subs.size > 1) err('DET-SINGLE-SUBFACTION', `${def.name} mixes Mechanicum sub-factions (${[...subs].sort().join(', ')}); a detachment uses one`, at);
   }
 
   // ── Rites of War ─────────────────────────────────────────────────────────
@@ -357,11 +378,23 @@ export function validate(roster: Roster, catalog: Catalog): ValidationResult {
       err('DET-UNLOCK-REQUIRED', `A ${roleLabel(pslot.role)} slot can't unlock detachments; only Command and High Command slots can`, at);
     }
   }
-  for (const [key, names] of slotUse)
-    if (names.length > 1) {
-      const [detId, slotId] = key.split('|');
-      err('DET-UNLOCK-ONE', `One slot is being used to unlock ${names.length} detachments (${names.join(', ')}); each slot unlocks one`, { detachmentId: detId!, slotId: slotId! });
-    }
+  for (const [key, names] of slotUse) {
+    const [detId, slotId] = key.split('|') as [string, string];
+    // Officer of the Line (X): a Command slot holding this unit unlocks X Auxiliary detachments.
+    const pdet = dets.get(detId);
+    const pslot = pdet && resolvedDefs.get(pdet.id)?.slots.find((s) => s.id === slotId);
+    const pfill = pdet?.fills.find((f) => f.slotId === slotId);
+    const officer = pslot?.role === 'Command' && pfill?.primeAdvantage !== 'special-assignment' ? unitDefs.get(pfill?.unit?.unitId ?? '') : undefined;
+    const allowance = officer?.commandAuxUnlocks ?? 1;
+    if (names.length > allowance)
+      err(
+        'DET-UNLOCK-ONE',
+        allowance > 1
+          ? `${officer!.name} (Officer of the Line (${allowance})) unlocks ${allowance} Auxiliary detachments, but ${names.length} are linked to it (${names.join(', ')})`
+          : `One slot is being used to unlock ${names.length} detachments (${names.join(', ')}); each slot unlocks one`,
+        { detachmentId: detId, slotId },
+      );
+  }
 
   // Root of each detachment (Primary or Allied) + cycle detection.
   const rootOf = new Map<string, DetachmentInstance | null>();
@@ -468,8 +501,9 @@ export function validate(roster: Roster, catalog: Catalog): ValidationResult {
           const link = det.unlockedBy;
           const u = link ? unitIn(link.detachmentId, link.slotId)?.unit : undefined;
           const udef = u ? unitDefs.get(u.unitId) : undefined;
-          if (!udef || !req.unitIds.includes(udef.id) || (req.allegiance && roster.allegiance !== req.allegiance))
-            fail(`${def.name} is only unlocked by ${name(req.unitIds)} in a Command slot${req.allegiance ? ` (${req.allegiance})` : ''}`);
+          const sub = u && udef ? (udef.subFactions ? u.subFaction : udef.subFaction) : undefined;
+          if (!udef || !req.unitIds.includes(udef.id) || (req.allegiance && roster.allegiance !== req.allegiance) || (req.subFaction && sub !== req.subFaction))
+            fail(`${def.name} is only unlocked by ${req.subFaction ? `a ${req.subFaction} ` : ''}${name(req.unitIds)} in a ${def.kind === 'Apex' ? 'High Command' : 'Command'} slot${req.allegiance ? ` (${req.allegiance})` : ''}`);
           break;
         }
         default:

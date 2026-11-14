@@ -6,8 +6,9 @@ import { roleLabel } from '../../src/validate';
 import type { Selection } from './App';
 import { EyeButton } from './datasheet';
 import { detachmentReasons, splitMessage } from './reasons';
+import { forArmyList, forPrimaryLegion } from './fits';
 import {
-  LEGIONS,
+  FACTIONS,
   addDetachment,
   canUnlock,
   childrenOf,
@@ -19,8 +20,10 @@ import {
   setChoice,
   slotsOf,
   unitDefs,
+  unlockAllowance,
   type BuilderState,
 } from './state';
+import { RoleIcon } from './RoleIcon';
 
 interface Props {
   state: BuilderState;
@@ -31,10 +34,8 @@ interface Props {
   issuesAt: (detId: string, slotId?: string) => Issue[];
 }
 
-const ROLE_ABBR: Record<string, string> = {
-  Warlord: 'WL', HighCommand: 'HC', Command: 'CMD', Retinue: 'RET', Elites: 'ELI', WarEngine: 'WE', Troops: 'TRP', Support: 'SUP',
-  LordOfWar: 'LoW', Transport: 'TPT', HeavyAssault: 'HA', HeavyTransport: 'HT', Armour: 'ARM', Recon: 'REC', FastAttack: 'FA',
-};
+
+const NUMBER_WORDS: Record<number, string> = { 2: 'two', 3: 'three', 4: 'four' };
 
 export function slotLabel(det: DetachmentInstance, slot: SlotDef): string {
   const extra = det.extraSlots.find((x) => x.id === slot.id);
@@ -67,7 +68,7 @@ function SlotChip({ det, slot, props }: { det: DetachmentInstance; slot: SlotDef
       onClick={() => props.setSel({ kind: 'slot', detId: det.id, slotId: slot.id })}
     >
       <span className="slot-role">
-        <span className="abbr" aria-hidden>{ROLE_ABBR[slot.role]}</span>
+        <RoleIcon role={slot.role} size={40} frame={slot.prime ? 'prime' : 'circle'} />
         {label}
         {slot.prime && <span className="star" title="Prime slot"> ★ Prime</span>}
       </span>
@@ -81,7 +82,7 @@ function SlotChip({ det, slot, props }: { det: DetachmentInstance; slot: SlotDef
           </span>
         </span>
       ) : (
-        <span className="slot-empty">empty — click to fill</span>
+        <span className="slot-empty">+ Add {roleLabel(slot.role)}</span>
       )}
       {errs.length > 0 && <span className="slot-err">{splitMessage(errs[0]!.message).what}</span>}
     </button>
@@ -108,9 +109,9 @@ function DetachmentCard({ det, depth, props }: { det: DetachmentInstance; depth:
           <span className="det-pts">{detPoints(det)} pts</span>
           {def.kind === 'Allied' && (
             <label>
-              Legion{' '}
+              Faction{' '}
               <select value={state.alliedFaction[det.id] ?? ''} onChange={(e) => commit(setAlliedFaction(state, det.id, e.target.value))}>
-                {LEGIONS.filter((l) => l !== state.primaryLegion).map((l) => (
+                {FACTIONS.filter((l) => l !== state.primaryLegion).map((l) => (
                   <option key={l}>{l}</option>
                 ))}
               </select>
@@ -149,6 +150,7 @@ function DetachmentCard({ det, depth, props }: { det: DetachmentInstance; depth:
             const fill = fillOf(det, s.id)!;
             const unitName = unitDefs.get(fill.unit!.unitId)?.name ?? '';
             const kids = childrenOf(state.roster, det.id, s.id);
+            const allowance = unlockAllowance(det, s);
             const special = fill.primeAdvantage === 'special-assignment';
             const unlockSel = props.sel?.kind === 'unlock' && props.sel.detId === det.id && props.sel.slotId === s.id;
             return (
@@ -159,14 +161,16 @@ function DetachmentCard({ det, depth, props }: { det: DetachmentInstance; depth:
                     ? 'is on Special Assignment, so it unlocks nothing.'
                     : s.role === 'HighCommand'
                       ? 'can unlock one Apex or one Auxiliary detachment.'
-                      : 'can unlock one Auxiliary detachment.'}
+                      : allowance > 1
+                        ? `can unlock ${NUMBER_WORDS[allowance] ?? allowance} Auxiliary detachments (Officer of the Line (${allowance}))${kids.length ? ` · ${kids.length} of ${allowance} used` : ''}.`
+                        : 'can unlock one Auxiliary detachment.'}
                 </div>
                 {kids.map((k) => (
                   <DetachmentCard key={k.id} det={k} depth={depth + 1} props={props} />
                 ))}
-                {!kids.length && !special && (
+                {kids.length < allowance && !special && (
                   <button className={`ghost ${unlockSel ? 'selected' : ''}`} aria-pressed={unlockSel} onClick={() => props.setSel({ kind: 'unlock', detId: det.id, slotId: s.id })}>
-                    + Unlock a detachment
+                    + Unlock {kids.length ? 'another' : 'a'} detachment
                   </button>
                 )}
               </div>
@@ -183,7 +187,7 @@ function AddBar({ props }: { props: Props }) {
   const options = useMemo(
     () =>
       CATALOG.detachments
-        .filter((d) => d.kind === 'Warlord' || d.kind === 'LordOfWar' || d.kind === 'Allied')
+        .filter((d) => (d.kind === 'Warlord' || d.kind === 'LordOfWar' || d.kind === 'Allied') && forPrimaryLegion(d, state.primaryLegion) && forArmyList(d, state.roster.detachments[0]?.armyList ?? 'legiones-astartes'))
         .map((d) => ({ def: d, reasons: detachmentReasons(state, d.id) })),
     [state],
   );

@@ -139,12 +139,58 @@ button.link.danger, button.danger { color: var(--bad); }
 .slot.error { border-color: var(--bad); border-style: solid; }
 .slot.selected { outline: 3px solid var(--focus); outline-offset: 1px; }
 .slot-role { font-size: 12px; color: var(--muted); display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-.abbr { font-size: 10px; font-weight: 700; padding: 1px 4px; border-radius: 3px; background: var(--accent-soft); color: var(--accent); }
+.role-icon { flex: none; vertical-align: middle; }
+.kind .role-icon { margin-right: 4px; }
+.legend li { min-height: 38px; }
+.legend .legend-prime { grid-column: 1 / -1; color: var(--muted); }
+.legend .legend-prime .role-icon { color: var(--prime); }
+.slot.prime .slot-role .role-badge { color: var(--prime); }
+.role-icon-img { object-fit: contain; display: inline-block; }
+.role-badge { position: relative; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+.role-badge .role-frame { position: absolute; inset: 0; }
+.role-badge .role-icon { position: relative; }
+.role-icon-mask {
+  display: inline-block; background-color: currentColor;
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+  -webkit-mask-size: contain; mask-size: contain;
+  -webkit-mask-position: center; mask-position: center;
+}
+.slot-role .role-icon { color: var(--accent); }
+.pick-name .role-icon, .ref-main .role-icon { color: var(--accent); }
+.role-chip .role-icon { margin-right: 4px; vertical-align: -3px; }
+.ref-group > summary .role-icon { color: var(--accent); align-self: center; }
+.legend { list-style: none; padding: 0; margin: 4px 0 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px 10px; font-size: 13px; }
+.legend li { display: flex; gap: 6px; align-items: center; }
+.legend .role-icon { color: var(--accent); }
 .star { color: var(--prime); font-weight: 600; }
 .unit-name { font-weight: 600; display: block; }
 .unit-meta { font-size: 12px; color: var(--muted); }
-.slot-empty { font-size: 13px; color: var(--muted); font-style: italic; }
+.slot-empty { font-size: 13px; font-weight: 600; color: var(--accent); }
 .slot-err { font-size: 12px; color: var(--bad); }
+
+/* ── filled vs empty slots: different card, different icon, different text ── */
+/* Empty: see-through dashed card, faded grey outline icon, "+ Add …" prompt. */
+.slot.empty { background: transparent; border-color: color-mix(in srgb, var(--muted) 50%, transparent); }
+.slot.empty .slot-role,
+.slot.empty .slot-role .role-badge,
+.slot.empty .slot-role .role-badge > .role-icon { color: var(--muted); }
+.slot.empty.prime .slot-role .role-badge,
+.slot.empty.prime .slot-role .role-badge > .role-icon { color: var(--prime); }
+.slot.empty .slot-role .role-badge { opacity: 0.45; }
+.slot.empty:hover .slot-role .role-badge,
+.slot.empty:focus-visible .slot-role .role-badge { opacity: 0.85; }
+.slot.empty:hover { border-color: var(--accent); }
+/* Filled: solid card with a gold edge, solid gold disc with the icon cut out of it. */
+.slot.filled {
+  /* A warm, slightly brighter tint so filled slots stand out from the card behind them. */
+  background: color-mix(in srgb, var(--accent) 13%, var(--surface));
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
+}
+.slot.filled:hover { background: color-mix(in srgb, var(--accent) 18%, var(--surface)); }
+.slot.filled .slot-role { color: var(--text); }
+.slot.filled .role-badge .ring { fill: currentColor; }
+.slot.filled .slot-role .role-badge > .role-icon { color: var(--surface); }
+.slot.error { border-color: var(--bad); }
 
 .unlocks { margin-top: 10px; display: flex; flex-direction: column; gap: 10px; }
 .unlock { border-left: 2px solid var(--accent); padding-left: 12px; margin-left: 6px; display: flex; flex-direction: column; gap: 8px; }
@@ -167,6 +213,7 @@ button.link.danger, button.danger { color: var(--bad); }
 .pick-name { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: baseline; }
 .pick-pts { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .pick-pts.small { font-size: 11px; white-space: normal; text-align: right; max-width: 45%; }
+.tag.armoury { background: var(--accent-soft); color: var(--accent); margin-left: 6px; }
 .tag { font-size: 11px; padding: 0 5px; border-radius: 3px; background: var(--surface-2); color: var(--muted); }
 details summary { cursor: pointer; color: var(--muted); margin: 6px 0; }
 
@@ -227,6 +274,36 @@ dl.rules dt { font-weight: 600; }
 dl.rules dd { margin: 0; color: var(--muted); font-size: 13px; }
 .fits li { line-height: 1.35; }
 
+/* ── unlock picker: one line per detachment, expandable ── */
+.det-list { list-style: none; padding: 0; margin: 0 0 8px; display: flex; flex-direction: column; }
+.det-row { border-bottom: 1px solid var(--border); }
+.det-line { display: flex; align-items: center; gap: 6px; padding: 6px 0; min-width: 0; max-width: 100%; overflow: hidden; }
+.det-row.locked .det-line-name { color: var(--muted); }
+.expander { border: none; background: none; padding: 2px 4px; color: var(--muted); font-size: 14px; flex: none; }
+.expander:hover { color: var(--accent); }
+.link-plain { border: none; background: none; padding: 0; font-weight: 600; text-align: left; cursor: pointer; flex: 0 0 auto; max-width: 60%; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.det-line .tag { flex: none; }
+.det-line-roles { display: inline-flex; gap: 4px; align-items: center; flex: 0 1 auto; min-width: 0; overflow: hidden; color: var(--accent); }
+.det-row.locked .det-line-roles { opacity: 0.55; }
+.mini-role { display: inline-flex; align-items: center; gap: 1px; }
+.mini-role small { font-size: 11px; color: var(--muted); }
+.det-line-why { flex: 1 1 0; min-width: 0; font-size: 12px; color: var(--bad); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.add-det {
+  margin-left: auto; flex: none; width: 30px; height: 30px; padding: 0; border-radius: 50%;
+  font-size: 18px; font-weight: 700; line-height: 1; color: var(--accent); border-color: var(--accent);
+}
+.add-det:not(.locked):hover { background: var(--accent); color: var(--surface); }
+.add-det.locked { font-size: 13px; color: var(--muted); border-color: var(--border); cursor: not-allowed; }
+.det-detail { padding: 0 0 10px 26px; }
+.add-with-cmd {
+  flex: 0 1 auto; min-width: 48px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-left: auto; font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px;
+  color: var(--accent); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.add-with-cmd:not(.locked):hover { background: var(--accent); color: var(--surface); }
+.add-with-cmd.locked { color: var(--muted); border-color: var(--border); background: none; cursor: not-allowed; }
+.add-with-cmd + .add-det.locked { display: none; }
+.fits-title { font-size: 13px; margin: 10px 0 2px; color: var(--muted); }
+
 /* ── unlock picker extras ── */
 .det-option { border-bottom: 1px solid var(--border); padding-bottom: 8px; }
 .role-chips { display: flex; flex-wrap: wrap; gap: 4px; margin: 2px 0 0; }
@@ -247,10 +324,21 @@ dl.rules dd { margin: 0; color: var(--muted); font-size: 13px; }
 .ref-group > summary { display: flex; align-items: baseline; gap: 8px; padding: 6px 0; color: var(--text); }
 .ref-group > summary h2 { font-size: 16px; margin: 0; display: inline; }
 .ref-list { list-style: none; padding: 0; margin: 0 0 8px; }
-.ref-row { padding: 8px 0; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px; }
+.ref-row { position: relative; padding: 8px 0; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px; }
 .ref-main { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; }
 .ref-main .pick-pts { margin-left: auto; }
-.ref-fits { display: flex; flex-wrap: wrap; gap: 4px; padding-left: 36px; }
+.fits-toggle { font-size: 12px; padding: 2px 8px; color: var(--muted); }
+/* Detachment list: hidden until hovered (floating, so nothing below moves) or pinned open. */
+.ref-fits { display: none; flex-wrap: wrap; gap: 4px; padding-left: 36px; }
+.ref-row.open .ref-fits { display: flex; }
+@media (hover: hover) {
+  .ref-row:not(.open):hover { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+  .ref-row:not(.open):hover .ref-fits {
+    display: flex; position: absolute; z-index: 5; top: calc(100% - 2px); left: 28px; right: 0;
+    padding: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    box-shadow: 0 6px 18px rgb(0 0 0 / 0.25);
+  }
+}
 .fit { font-size: 12px; padding: 1px 6px; border-radius: 4px; border: 1px solid var(--border); color: var(--muted); }
 .fit.kind-Primary { border-color: var(--accent); }
 .fit.kind-Apex { border-color: #6d4aa8; }

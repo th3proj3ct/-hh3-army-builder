@@ -128,3 +128,46 @@ describe('Death Guard on imported BSData points', () => {
     it(`ILLEGAL: ${name}`, () => expect(ruleIds(deathGuard(tweak))).toEqual([...expected].sort()));
   }
 });
+
+describe('Death Guard armoury (imported from BSData Legion-gated entries)', () => {
+  const opts = (unitId: string) => byId.get(unitId)!.options;
+  const ARMOURY = ['Power scythe', 'Alchem caster', 'Alchem combi-flamer', 'Alchem flamer', 'Heavy alchem flamer', 'Heavy Alchem flamers'];
+
+  it('every Legion-gated option is a Death Guard armoury item, gated to Death Guard only', () => {
+    const gated = CATALOG.units.flatMap((u) => u.options.filter((o) => o.factionTraits));
+    expect(gated.length).toBeGreaterThan(100);
+    for (const o of gated) {
+      expect(o.factionTraits).toEqual(['Death Guard']);
+      expect(ARMOURY).toContain(o.name.split(': ').pop());
+    }
+  });
+
+  it('a Death Guard Sergeant can take an alchem combi-flamer (+10)', () => {
+    const r = deathGuard((p) => (p.p!.fills[5]!.unit = u('tactical-squad', { options: [['sergeant--alchem-combi-flamer', 1]] })));
+    const res = validate(r, CATALOG);
+    expect(res.errors).toEqual([]);
+    expect(res.totals.points).toBe(2735 + 10);
+  });
+
+  it('an Iron Warriors Sergeant cannot', () => {
+    const r = deathGuard((p, ro) => {
+      p.p!.fills[5]!.unit = u('tactical-squad', { faction: 'Iron Warriors', options: [['sergeant--alchem-combi-flamer', 1]] });
+      ro.ritesOfWar['Iron Warriors'] = 'iron-warriors-legiones-astartes';
+    });
+    expect(ruleIds(r)).toEqual(['DET-SINGLE-FACTION', 'OPT-GATED']);
+  });
+
+  it('power scythe is +10 for a model swapping a power weapon, +20 from the bolter list', () => {
+    expect(opts('cataphractii-terminator-squad').find((o) => o.id === 'cataphractii-terminator-sergeant--power-scythe')?.cost.points).toBe(10);
+    expect(opts('tactical-squad').find((o) => o.id === 'sergeant--power-scythe')?.cost.points).toBe(20);
+  });
+
+  it('other Legions\' hidden options (Thousand Sons cults) are not imported as generic options', () => {
+    const cults = CATALOG.units.flatMap((u) => u.options).filter((o) => /^(Athanaean|Corvidae|Pavoni|Pyrae|Raptora)$/.test(o.name.split(': ').pop()!));
+    expect(cults).toEqual([]);
+  });
+
+  it('Terminators no longer list a paid combi-bolter they already carry for free', () => {
+    expect(opts('cataphractii-terminator-squad').some((o) => /: Combi-bolter$/.test(o.name) && o.cost.points === 5)).toBe(false);
+  });
+});

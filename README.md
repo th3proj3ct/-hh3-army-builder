@@ -40,6 +40,8 @@ It opens on the legal 3,000 pt Death Guard sample. "New list" starts empty, and 
 - Undo/redo (Ctrl+Z / Ctrl+Shift+Z) and Export JSON. The list is remembered in localStorage.
 - On phones the details panel is a bottom sheet.
 
+- **Role icons:** the app draws its own icon for each Battlefield Role. To use your own images instead, put them in `ui/role-icons/` (see the README there for file names). Git ignores that folder, and builds leave the images out unless you set `ROLE_ICONS=include`.
+
 Every lock reason comes from `explainChange()`, so the UI has no rules logic of its own. Code is in `ui/src/`.
 
 ## Real data (BSData import)
@@ -51,12 +53,14 @@ npm run import:bsdata -- "C:/Users/jesse/Documents/repos/horus-heresy-3rd-editio
 ```
 
 - Output: `data/bsdata/units.json` (stamped with the BSData commit, which becomes `CATALOG.version`), plus [`data/bsdata/IMPORT-REPORT.md`](data/bsdata/IMPORT-REPORT.md) listing every approximation.
-- Imported now: generic Legiones Astartes units and Death Guard units (145 total). Pass other catalogue file names to import more Legions.
+- Imported now: generic Legiones Astartes units and Death Guard units (146), plus the Mechanicum list (39 units, its own army list with sub-factions and five Apex detachments; see [docs/RULES.md](docs/RULES.md#mechanicum-14-nov-2026)). Pass other catalogue file names to import more Legions.
 - `test/points-crosscheck.test.ts` checks 14 units against Wahapedia (all matched on 13 Nov 2026), so BSData isn't checking itself.
 - `test/death-guard.test.ts`: 2 legal and 11 illegal Death Guard lists on real points.
 
+**Legion armoury:** BSData hides armoury items by default and reveals them with conditions like "force is the XIV - Death Guard catalogue". The importer evaluates those conditions once per Legion. Each item is imported with `factionTraits` set to the Legions that see it, and the validator enforces that (`OPT-GATED`). Conditions it can't evaluate count as "not met" (Blackshields, Shattered Legions, upgrade-dependent ones), so nothing leaks through. Only Legions whose catalogue is being imported get their armoury, so today that's Death Guard: power scythes, alchem casters, alchem flamers and alchem combi-flamers.
+
 **Known gaps in the import:**
-- Legion-specific option entries that BSData hides unless a Legion is picked (e.g. Legion armoury items) are skipped. The report gives the count.
+- Other Legions' armoury items aren't imported until their catalogue is (e.g. `npm run import:bsdata -- <repo> "Legiones Astartes.json" "Death Guard.json" "Iron Warriors.json"`). Blackshields and Shattered Legions access to armouries isn't modelled.
 - Option caps on units with several model types (e.g. sergeant vs legionaries) use total unit size, not per-type counts.
 - Conditional costs use the base cost.
 - Mortus Poisoner Squad isn't on Wahapedia, so its points are unchecked.

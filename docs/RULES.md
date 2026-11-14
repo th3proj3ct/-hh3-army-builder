@@ -31,6 +31,8 @@ Status key: ✅ confirmed as written · ⚠️ ambiguous (reading chosen, flagge
 | UNIT-MODEL-COUNT | Size within profile min/max | Selecting Units | ✅ |
 | UNIT-FACTION-TRAIT | `[Legiones Astartes]` → choose one Legion; fixed traits can't change | Liber Astartes | ✅ |
 | DET-SINGLE-FACTION | One Faction trait per detachment unless a rule says otherwise | Liber Astartes | ✅ |
+| UNIT-SUB-FACTION | Mechanicum units that offer a sub-faction (Archimandrite, Cybernetica, Lacrymaerta, Macrotek, Malagra, Myrmidax, Reductor) must take one; fixed ones (Castellax: Cybernetica) can't change | BSData "Mechanicum - Sub-faction" (min 1, max 1) | ✅ |
+| DET-SINGLE-SUBFACTION | One Mechanicum sub-faction per detachment | BSData "Multiple Mechanicum Traits in Detachment" | ⚠️ |
 
 ## Detachments and unlocking
 
@@ -39,12 +41,13 @@ Status key: ✅ confirmed as written · ⚠️ ambiguous (reading chosen, flagge
 | DET-UNLOCK-REQUIRED | Apex/Aux need a *filled* Command/HC slot | Adding Detachments to an Army | ✅ |
 | DET-UNLOCK-HC | HC slot → one Apex **or** one Aux | Apex Detachments | ✅ |
 | DET-UNLOCK-CMD | Command slot → one Aux, never Apex | Primary Detachments | ✅ |
-| DET-UNLOCK-ONE | One detachment per slot | Primary Detachments | ✅ |
+| DET-UNLOCK-ONE | One detachment per slot, except **Officer of the Line (X)**: a unit with it in a Command slot unlocks X Auxiliaries (Centurions: 2) | Primary Detachments; Special Rules › Officer of the Line (X) | ✅ |
 | DET-UNLOCK-SOURCE | Only Primary, Apex, Allied slots unlock | Primary/Apex/Allied | ⚠️ |
 | DET-UNLOCK-ALLIED | Allied unlocks Aux only, linked to the Allied | Allied Detachments | ✅ |
 | DET-UNLOCK-CYCLE | Unlock chain must reach Primary/Allied | Apex Detachments (implied) | ⚠️ |
 | DET-UNLOCK-SPECIFIC | "When an X fills a Command slot… add Y *instead of* the FOC options" | Liber Astartes Aux Detachments | ✅ |
 | DET-LINKED-LIST | Apex/Aux use the linked detachment's army list | Primary Detachments | ✅ |
+| DET-ARMY-LIST | A list's own detachments only for that list: Legiones Astartes Auxiliaries (Techmarine Covenant…) aren't for Mechanicum, Mechanicum Apexes aren't for Legions | Liber Astartes; BSData force entries ("Mechanicum only") | ✅ |
 | DET-MAX-LOW | ≤1 Lord of War Detachment | Lord of War Detachments | ✅ |
 | DET-MAX-WARLORD | ≤1 Warlord Detachment or replacement (Brotherhood of the Phoenix) | Warlord Detachments; EC Additional Detachment | ✅ |
 | DET-REQUIREMENT | Data-driven prereqs: min points, allegiance, Primary Faction, "army includes X", "detachment includes X" | Per-Legion Additional Detachments | ✅ |
@@ -92,6 +95,25 @@ Status key: ✅ confirmed as written · ⚠️ ambiguous (reading chosen, flagge
 - **Legions may ally other Legions** of the same Allegiance.
 - **Death Guard:** Reaping Host (Troops Prime, Troops, Support, Heavy Assault; no Assault Squads in Troops; Death Guard Primary only). Unnatural Resilience is once per army, for a Death Guard Centurion or "Cataphractii Centurion" (mapped to Centurion in Terminator Armour, **confirm**).
 
+## Mechanicum (14 Nov 2026)
+
+Read from BSData `Mechanicum.json` and the game system's force entries. Wahapedia's Mechanicum page returned 404, so **none of this is checked against the Liber Mechanicum text**, and the 39 units' points aren't cross-checked either.
+
+- **Army list:** its own list (`mechanicum`), Faction "Mechanicum", no Rite of War. Usable as the Primary or as an Allied detachment of a Legion army (and the reverse).
+- **Sub-factions** are chosen per unit, but a detachment has one, so the builder sets every unit in the detachment that can take it when you change one.
+- **Apex detachments**, each unlocked by an Archmagos (or Archmagos on Abeyant) of one sub-faction in a High Command slot:
+
+  | Apex | Sub-faction | Slots | Restriction |
+  |---|---|---|---|
+  | Command Maniple | Cybernetica | ★Elites, ★Support, ★War-engine | Automata only |
+  | The Panoply of Cruelty | Lacrymaerta | ★Heavy Assault ×3 | Ursarax Cohort only |
+  | The Host of Destruction | Myrmidax | ★Elites, Elites ×3 | Myrmidax units only |
+  | Crux of Judgement | Malagra | Command ×3 | Arcuitor Magisterium only; its Command slots unlock nothing |
+  | Thallax Command Cohort | Reductor | ★Support ×3 | Thallax Cohort only |
+
+- **Not checked:** Crux of Judgement's Arcuitors "must form a single Unit"; Thallax Command Cohort "must include a Praetorian" (unit make-up isn't modelled); "Mechanicum Logistical Benefit" and any other Mechanicum Prime Advantages; Cybertheurgic Rites / Arcana limits beyond BSData's group caps; Carnage and Pandemonium (an Army Configuration, skipped by the importer); Cults Abominatio and Divisio Assassinorum entries linked from the catalogue.
+- **Unlock reading:** BSData's condition is "the roster has an Archmagos with Cybernetica"; I require that Archmagos to be the High Command unit unlocking the Apex, which is the core Apex rule. ⚠️
+
 ## Ambiguities: the reading I chose
 
 1. **LOW-CAP: what counts, and ≤ or <.** The Lord of War Detachment section counts the *whole LoW Detachment* plus Warlord-role units. The Warlord Detachment section counts *Warlord-role units* plus LoW-role units elsewhere. The summary box says all Warlord or LoW **role** units. One sentence about armies under 3,000 points says "less than 25%"; everywhere else it's "no more than". **Encoded:** LoW Detachment units + Warlord/LoW-role units anywhere, ≤ ceil(25%). Retinue and Heavy Transport units in a Warlord Detachment are **not** counted.
@@ -101,7 +123,7 @@ Status key: ✅ confirmed as written · ⚠️ ambiguous (reading chosen, flagge
 5. **Rites of War vs Additional Detachments.** Wahapedia shows Legion Additional Detachments gated by *Primary Faction*. The FAQ says Additional Detachments can't be used "from Rites of War other than the ones selected". The data model supports both gates (`primaryFaction`, `riteOfWar`). The sample data uses only `primaryFaction`.
 6. **Allied Faction for Legions.** Encoded as: Faction = Legion trait, so a Blood Angels Primary may ally Dark Angels. That follows from "Faction is determined by the Army List… and Legion Rules", but I haven't seen it confirmed in an FAQ.
 7. **Unlock loops** aren't addressed in the text. I reject them because Apex/Aux must be "linked to the Primary Detachment".
-8. **Slot layouts are inferred from HTML.** Some Legion detachments have no title in the chart markup. I matched them by document order to the text that follows (Daemonic Manifestation, Veteran Cadre, Apothecarion, Techmarine, Recon Demi-company, Storm Battery, Dreadnought Talon). Re-check against the book art.
+8. ~~Slot layouts inferred from HTML order.~~ **Resolved 13 Nov 2026:** each Legiones Astartes detachment's name appears inside its own chart box on Wahapedia, and all nine layouts are checked in `test/astartes-detachments.test.ts`.
 9. **Master Sergeant / Paragon of Battle** need a Sergeant / Command sub-type model to *do* anything. I don't make picking one illegal on a unit without such a model. Unclear.
 
 ## Not found (hooks only, unconfirmed)
@@ -109,5 +131,5 @@ Status key: ✅ confirmed as written · ⚠️ ambiguous (reading chosen, flagge
 - **U-1 Units that don't take a slot.** HH3 says "each Unit selected as part of a Detachment will fill a Force Organisation Slot". The designer's note says Dedicated Transports and Retinues-as-part-of-the-commander's-choice are gone. I found **no** HH3 slot-free unit. `UnitDef.takesNoSlot` exists but the validator doesn't honour it yet (on purpose).
 - **U-2 Options that change a unit's role.** Not found in what I read. The closest things are Prime Advantages that *add slots* (Iron Hands, Ultramarines, Alpha Legion, Shattered Legions) and Special Assignment (a role exception on a *slot*, not a unit). `OptionEffect.setRole` exists and is honoured.
 - **U-3 Retinue units needing a commander.** No list-building rule found that ties a Retinue to an HC/Command unit (it may be a deployment/joining rule in the Libers). Not enforced.
-- **U-4** Apothecarion Delegation / Techmarine Covenant unlocks (ambiguity 4 above).
+- ~~**U-4** Apothecarion Delegation / Techmarine Covenant unlocks.~~ Resolved: Wahapedia gives no specific unit and BSData only requires a Legion Primary, so both are taken with any Command/High Command unlock.
 - Legion-specific exceptions I didn't model in sample data: Shattered Legions mixed Factions (`mixedFactions` flag exists), Blackshields, Knights-Errant, Legiones Inductii details beyond "no Primes", Corrupted Legions beyond True Believers, Daemonic Manifestation's cross-list slot (supported by `SlotRestriction.armyList`).

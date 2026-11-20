@@ -9,6 +9,9 @@ import { Panel } from './Panel';
 import { PointsBar } from './PointsBar';
 import { deathGuardSample } from './samples';
 import { FACTIONS, armyListOf, emptyState, load, save, setPrimaryLegion, type BuilderState } from './state';
+import { THEMES, applyTheme, loadTheme, type Theme } from './theme';
+
+const THEME_LABEL: Record<Theme, string> = { auto: '◐ Auto', light: '☀ Light', dark: '☾ Dark' };
 
 export type Selection =
   | { kind: 'slot'; detId: string; slotId: string }
@@ -26,6 +29,12 @@ export function App() {
   const [sel, setSel] = useState<Selection>(null);
   const [announce, setAnnounce] = useState('');
   const [view, setView] = useState<'builder' | 'reference'>('builder');
+  const [theme, setTheme] = useState<Theme>(loadTheme);
+  const nextTheme = () => {
+    const t = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length]!;
+    applyTheme(t);
+    setTheme(t);
+  };
   const state = hist.present;
   const result = useMemo(() => validate(state.roster, CATALOG), [state]);
 
@@ -148,6 +157,13 @@ export function App() {
           <button onClick={() => { commit(emptyState(state.primaryLegion, r.pointsLimit, r.allegiance), 'New empty list'); setSel(null); }}>New list</button>
           <button onClick={() => { commit(deathGuardSample(), 'Loaded the Death Guard sample'); setSel(null); }}>Death Guard sample</button>
           <button onClick={exportJson}>Export JSON</button>
+          <button
+            onClick={nextTheme}
+            title={`Theme: ${theme === 'auto' ? 'follows your device' : theme}. Click for ${THEME_LABEL[THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length]!].slice(2)}.`}
+            aria-label={`Theme: ${THEME_LABEL[theme].slice(2)}. Change theme`}
+          >
+            {THEME_LABEL[theme]}
+          </button>
         </div>
       </header>
 

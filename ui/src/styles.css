@@ -39,6 +39,27 @@
     color-scheme: dark;
   }
 }
+/* The theme button's "Dark" choice: the same colours as above, whatever the device says.
+   ("Light" works through the :not([data-theme='light']) above; "Auto" sets no attribute.) */
+:root[data-theme='dark'] {
+  --bg: #151513;
+  --surface: #1f1e1b;
+  --surface-2: #2a2925;
+  --text: #ece9e2;
+  --muted: #a39f95;
+  --border: #3a3832;
+  --accent: #d8bf6a;
+  --accent-soft: #3a331c;
+  --ok: #79c08a;
+  --ok-soft: #1e3324;
+  --bad: #f08a80;
+  --bad-soft: #3d1f1c;
+  --warn: #e7b65a;
+  --warn-soft: #3b2f17;
+  --prime: #e2be4f;
+  --focus: #7aa7ff;
+  color-scheme: dark;
+}
 
 * { box-sizing: border-box; }
 body {

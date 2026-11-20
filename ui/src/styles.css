@@ -193,7 +193,13 @@ button.link.danger, button.danger { color: var(--bad); }
 
 /* ── filled vs empty slots: different card, different icon, different text ── */
 /* Empty: see-through dashed card, faded grey outline icon, "+ Add …" prompt. */
-.slot.empty { background: transparent; border-color: color-mix(in srgb, var(--muted) 50%, transparent); }
+.slot.empty {
+  /* Recessed: a touch darker than the detachment card, faint dashed edge, quiet text. */
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
+  border-color: color-mix(in srgb, var(--muted) 40%, transparent);
+}
+.slot.empty .slot-empty { color: var(--muted); font-weight: 500; }
+.slot.empty:hover .slot-empty, .slot.empty:focus-visible .slot-empty { color: var(--accent); }
 .slot.empty .slot-role,
 .slot.empty .slot-role .role-badge,
 .slot.empty .slot-role .role-badge > .role-icon { color: var(--muted); }
@@ -205,11 +211,15 @@ button.link.danger, button.danger { color: var(--bad); }
 .slot.empty:hover { border-color: var(--accent); }
 /* Filled: solid card with a gold edge, solid gold disc with the icon cut out of it. */
 .slot.filled {
-  /* A warm, slightly brighter tint so filled slots stand out from the card behind them. */
-  background: color-mix(in srgb, var(--accent) 13%, var(--surface));
-  border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
+  /* Raised: a clear gold tint, a thicker solid gold edge and a small shadow. */
+  background: color-mix(in srgb, var(--accent) 22%, var(--surface));
+  border: 2px solid color-mix(in srgb, var(--accent) 85%, var(--border));
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.25);
 }
-.slot.filled:hover { background: color-mix(in srgb, var(--accent) 18%, var(--surface)); }
+.slot.filled.prime { box-shadow: inset 3px 0 0 var(--prime), 0 1px 4px rgb(0 0 0 / 0.25); }
+.slot.filled:hover { background: color-mix(in srgb, var(--accent) 28%, var(--surface)); }
+.slot.filled .unit-name { font-size: 15px; }
+.slot.filled .unit-meta { color: color-mix(in srgb, var(--text) 75%, transparent); }
 .slot.filled .slot-role { color: var(--text); }
 .slot.filled .role-badge .ring { fill: currentColor; }
 .slot.filled .slot-role .role-badge > .role-icon { color: var(--surface); }

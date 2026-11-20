@@ -67,10 +67,11 @@ function SlotChip({ det, slot, props }: { det: DetachmentInstance; slot: SlotDef
       aria-label={`${label}${slot.prime ? ', Prime slot' : ''}: ${def ? `${def.name}, ${unitPoints(unit!, def)} points` : 'empty'}${errs.length ? `, ${errs.length} problem` : ''}`}
       onClick={() => props.setSel({ kind: 'slot', detId: det.id, slotId: slot.id })}
     >
+      {/* Its own line just above the icon, so every slot's icon and label sit on the same line. */}
+      {slot.prime && <span className="star slot-prime" title="Prime slot">★ Prime</span>}
       <span className="slot-role">
         <RoleIcon role={slot.role} size={40} frame={slot.prime ? 'prime' : 'circle'} />
         {label}
-        {slot.prime && <span className="star" title="Prime slot"> ★ Prime</span>}
       </span>
       {def ? (
         <span className="slot-unit">

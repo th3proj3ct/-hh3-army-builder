@@ -5,15 +5,19 @@
   --text: #1d1c1a;
   --muted: #6a675f;
   --border: #d9d5cc;
-  --accent: #6b5a1e;
-  --accent-soft: #f1e8c9;
+  /* Colour palette (the toolbar's colour picker). Gold by default; each palette below sets
+     a light-mode and a dark-mode version of the accent, its soft tint and the Prime colour. */
+  --a-light: #6b5a1e; --a-light-soft: #f1e8c9; --p-light: #a07a10;
+  --a-dark: #d8bf6a; --a-dark-soft: #3a331c; --p-dark: #e2be4f;
+  --accent: var(--a-light);
+  --accent-soft: var(--a-light-soft);
   --ok: #2f6b3a;
   --ok-soft: #e1efe3;
   --bad: #a3271f;
   --bad-soft: #f8e1de;
   --warn: #8a5a00;
   --warn-soft: #fbefd2;
-  --prime: #a07a10;
+  --prime: var(--p-light);
   --focus: #2457c5;
   --radius: 8px;
   color-scheme: light;
@@ -26,15 +30,15 @@
     --text: #ece9e2;
     --muted: #a39f95;
     --border: #3a3832;
-    --accent: #d8bf6a;
-    --accent-soft: #3a331c;
+    --accent: var(--a-dark);
+    --accent-soft: var(--a-dark-soft);
     --ok: #79c08a;
     --ok-soft: #1e3324;
     --bad: #f08a80;
     --bad-soft: #3d1f1c;
     --warn: #e7b65a;
     --warn-soft: #3b2f17;
-    --prime: #e2be4f;
+    --prime: var(--p-dark);
     --focus: #7aa7ff;
     color-scheme: dark;
   }
@@ -48,18 +52,25 @@
   --text: #ece9e2;
   --muted: #a39f95;
   --border: #3a3832;
-  --accent: #d8bf6a;
-  --accent-soft: #3a331c;
+  --accent: var(--a-dark);
+  --accent-soft: var(--a-dark-soft);
   --ok: #79c08a;
   --ok-soft: #1e3324;
   --bad: #f08a80;
   --bad-soft: #3d1f1c;
   --warn: #e7b65a;
   --warn-soft: #3b2f17;
-  --prime: #e2be4f;
+  --prime: var(--p-dark);
   --focus: #7aa7ff;
   color-scheme: dark;
 }
+
+/* Colour palettes. Light mode needs dark accents (readable on pale cards); dark mode bright ones. */
+:root[data-accent='crimson'] { --a-light: #9b2335; --a-light-soft: #f5dde0; --p-light: #b8323f; --a-dark: #e7838e; --a-dark-soft: #3d1d22; --p-dark: #f09aa3; }
+:root[data-accent='azure']   { --a-light: #24508f; --a-light-soft: #dde7f5; --p-light: #2f63ad; --a-dark: #8fb4ea; --a-dark-soft: #1b2a40; --p-dark: #a9c6f2; }
+:root[data-accent='emerald'] { --a-light: #23664a; --a-light-soft: #dcefe5; --p-light: #2f7d5c; --a-dark: #7fcfa6; --a-dark-soft: #183327; --p-dark: #98dcb8; }
+:root[data-accent='violet']  { --a-light: #5b3a8c; --a-light-soft: #e8e0f3; --p-light: #6d47a6; --a-dark: #b9a0e6; --a-dark-soft: #2c2240; --p-dark: #c9b4ef; }
+:root[data-accent='steel']   { --a-light: #44515e; --a-light-soft: #e3e7eb; --p-light: #5b6977; --a-dark: #b8c4cf; --a-dark-soft: #262c32; --p-dark: #cfd8e0; }
 
 * { box-sizing: border-box; }
 body {
@@ -165,7 +176,9 @@ button.link.danger, button.danger { color: var(--bad); }
 /* Unit (or "+ Add …") first, problems next, role icon and label pinned to the bottom left. */
 .slot > .slot-unit, .slot > .slot-empty { order: 1; }
 .slot > .slot-err { order: 2; }
-.slot > .slot-role { order: 3; margin-top: auto; padding-top: 4px; }
+.slot > .slot-prime { order: 3; margin-top: auto; padding-top: 4px; font-size: 12px; }
+.slot > .slot-role { order: 4; margin-top: auto; padding-top: 4px; }
+.slot > .slot-prime + .slot-role { margin-top: 0; padding-top: 2px; }
 .role-icon { flex: none; vertical-align: middle; }
 .kind .role-icon { margin-right: 4px; }
 .legend li { min-height: 38px; }
@@ -397,3 +410,22 @@ dl.rules dd { margin: 0; color: var(--muted); font-size: 13px; }
   .meter { min-width: 140px; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+
+/* Colour picker in the toolbar: a swatch of the current accent next to its menu. */
+.accent-pick { display: inline-flex; align-items: center; gap: 6px; }
+.accent-dot { width: 14px; height: 14px; border-radius: 50%; background: var(--accent); border: 1px solid var(--border); flex: none; }
+
+/* Prime Advantage choices: bold name, plain description underneath, locked ones say why. */
+.prime-choices { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+.prime-choices legend { font-weight: 600; margin-bottom: 4px; padding: 0; }
+.prime-choice { display: flex; gap: 8px; align-items: flex-start; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; }
+.prime-choice input { margin-top: 3px; flex: none; }
+.prime-choice > span { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.prime-choice strong { font-weight: 700; }
+.prime-choice .prime-desc { font-weight: 400; font-size: 13px; color: var(--muted); }
+.prime-choice.chosen { border-color: var(--accent); background: var(--accent-soft); }
+.prime-choice.chosen .prime-desc { color: var(--text); }
+.prime-choice.locked { opacity: 0.7; cursor: not-allowed; }
+.prime-choice .why { font-size: 12px; }
+.prime-locked > summary { cursor: pointer; color: var(--muted); font-size: 13px; margin: 4px 0; }
+.prime-locked { display: flex; flex-direction: column; gap: 4px; }

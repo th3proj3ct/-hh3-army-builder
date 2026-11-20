@@ -9,7 +9,7 @@ import { Panel } from './Panel';
 import { PointsBar } from './PointsBar';
 import { deathGuardSample } from './samples';
 import { FACTIONS, armyListOf, emptyState, load, save, setPrimaryLegion, type BuilderState } from './state';
-import { THEMES, applyTheme, loadPanelSide, loadTheme, savePanelSide, type PanelSide, type Theme } from './theme';
+import { ACCENTS, THEMES, applyAccent, applyTheme, loadAccent, loadPanelSide, loadTheme, savePanelSide, type Accent, type PanelSide, type Theme } from './theme';
 
 const THEME_LABEL: Record<Theme, string> = { auto: '◐ Auto', light: '☀ Light', dark: '☾ Dark' };
 
@@ -31,6 +31,7 @@ export function App() {
   const [view, setView] = useState<'builder' | 'reference'>('builder');
   const [theme, setTheme] = useState<Theme>(loadTheme);
   const [side, setSide] = useState<PanelSide>(loadPanelSide);
+  const [accent, setAccent] = useState<Accent>(loadAccent);
   const swapSide = () => {
     const s2: PanelSide = side === 'left' ? 'right' : 'left';
     savePanelSide(s2);
@@ -166,6 +167,22 @@ export function App() {
           <button onClick={swapSide} title={`Move the unit panel to the ${side === 'left' ? 'right' : 'left'}`} aria-label={`Unit panel is on the ${side}. Move it to the ${side === 'left' ? 'right' : 'left'}`}>
             {side === 'left' ? '◧ Panel left' : '◨ Panel right'}
           </button>
+          <label className="accent-pick" title="Colour for highlights, icons and Prime slots">
+            <span className="accent-dot" aria-hidden />
+            <select
+              aria-label="Colour"
+              value={accent}
+              onChange={(e) => {
+                const a = e.target.value as Accent;
+                applyAccent(a);
+                setAccent(a);
+              }}
+            >
+              {ACCENTS.map((a) => (
+                <option key={a.id} value={a.id}>{a.name}</option>
+              ))}
+            </select>
+          </label>
           <button
             onClick={nextTheme}
             title={`Theme: ${theme === 'auto' ? 'follows your device' : theme}. Click for ${THEME_LABEL[THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length]!].slice(2)}.`}

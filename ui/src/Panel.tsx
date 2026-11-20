@@ -239,30 +239,37 @@ function UnitEditor({ props, det, slot }: { props: Props; det: DetachmentInstanc
 
       {slot.prime && (
         <div className="field">
-          <label htmlFor="prime">Prime Advantage (★ Prime slot)</label>
-          <select id="prime" value={fill.primeAdvantage ?? ''} onChange={(e) => commit(setPrime(state, det.id, slot.id, e.target.value || undefined))}>
-            <option value="">— none —</option>
-            {primes.map(({ p, reasons }) => (
-              <option key={p.id} value={p.id} disabled={reasons.length > 0}>
-                {reasons.length ? '✗ ' : ''}
-                {p.name}
-                {p.summary ? ` — ${p.summary}` : ''}
-                {reasons.length ? ` [Not available: ${splitMessage(reasons[0]!.message).what}]` : ''}
-              </option>
-            ))}
-          </select>
-          {chosenPrime?.summary && <p className="hint prime-summary">★ {chosenPrime.name}: {chosenPrime.summary}</p>}
-          <details className="prime-help">
-            <summary>What do the Prime Advantages do?</summary>
-            <dl className="rules">
-              {primes.map(({ p, reasons }) => (
-                <div key={p.id}>
-                  <dt>{p.name}{reasons.length ? <span className="why"> — not available here</span> : null}</dt>
-                  <dd>{p.summary ?? ''}{reasons.length ? <><br /><span className="why">{splitMessage(reasons[0]!.message).what}</span></> : null}</dd>
-                </div>
-              ))}
-            </dl>
-          </details>
+          {/* A list of choices rather than a <select>: options can't mix bold names with plain descriptions. */}
+          <fieldset className="prime-choices">
+            <legend>Prime Advantage (★ Prime slot)</legend>
+            {(() => {
+              const pick = (id: string | undefined) => commit(setPrime(state, det.id, slot.id, id));
+              const choice = (id: string | undefined, name: string, summary?: string, why?: string) => (
+                <label key={id ?? 'none'} className={`prime-choice ${why ? 'locked' : ''} ${(fill.primeAdvantage ?? undefined) === id ? 'chosen' : ''}`}>
+                  <input type="radio" name={`prime-${det.id}-${slot.id}`} checked={(fill.primeAdvantage ?? undefined) === id} disabled={!!why} onChange={() => pick(id)} />
+                  <span>
+                    <strong>{name}</strong>
+                    {summary && <span className="prime-desc">{summary}</span>}
+                    {why && <span className="why">{why}</span>}
+                  </span>
+                </label>
+              );
+              const open = primes.filter((x) => !x.reasons.length);
+              const locked = primes.filter((x) => x.reasons.length);
+              return (
+                <>
+                  {choice(undefined, 'None')}
+                  {open.map(({ p }) => choice(p.id, p.name, p.summary))}
+                  {locked.length > 0 && (
+                    <details className="prime-locked">
+                      <summary>Not available here ({locked.length})</summary>
+                      {locked.map(({ p, reasons }) => choice(p.id, p.name, p.summary, splitMessage(reasons[0]!.message).what))}
+                    </details>
+                  )}
+                </>
+              );
+            })()}
+          </fieldset>
           {extra && (
             <div className="field">
               <label htmlFor="xrole">{primeDefs.get(extra.grantedBy.primeAdvantageId)?.name} adds one slot to this detachment. Its role:</label>
@@ -282,11 +289,12 @@ function UnitEditor({ props, det, slot }: { props: Props; det: DetachmentInstanc
       )}
 
       {def.options.length > 0 && (
-        <details className="wargear">
+        // Open by default; the key re-opens it whenever another slot is selected.
+        <details className="wargear" open key={`${det.id}|${slot.id}`}>
           <summary>Wargear options ({shown.length})</summary>
           <p className="hint">
             Imported from BSData. Free default wargear isn't listed. Legion armoury items appear for that Legion only
-            {unitFaction ? ` (showing ${unitFaction})` : ''}; so far only the Death Guard armoury is imported.
+            {unitFaction ? ` (showing ${unitFaction})` : ''}.
           </p>
           {[...groups.entries()].map(([g, opts]) => (
             <fieldset key={g}>

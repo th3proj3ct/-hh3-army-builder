@@ -139,9 +139,9 @@ function UnitPicker({ props, det, slot }: { props: Props; det: DetachmentInstanc
   );
 }
 
-/** A collapsible wargear category: starts open only if something in it is taken. */
+/** A collapsible wargear category: starts open; collapse it to just the heading (which lists what is taken). */
 function OptGroup({ title, total, taken, children }: { title: string; total: number; taken: string[]; children: ReactNode }) {
-  const [open, setOpen] = useState(taken.length > 0);
+  const [open, setOpen] = useState(true);
   return (
     <details className="opt-group" open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
       <summary>
@@ -253,8 +253,8 @@ function UnitEditor({ props, det, slot }: { props: Props; det: DetachmentInstanc
       {slot.prime && (
         <div className="field">
           {/* A list of choices rather than a <select>: options can't mix bold names with plain descriptions.
-              Collapsed by default (the summary names the current choice); re-collapses per slot. */}
-          <details className="prime-details" key={`prime|${det.id}|${slot.id}`}>
+              Starts open; collapse it to just the heading (which names the current choice). Re-opens per slot. */}
+          <details className="prime-details" open key={`prime|${det.id}|${slot.id}`}>
           <summary>
             Prime Advantage (★ Prime slot): <strong>{fill.primeAdvantage ? primeDefs.get(fill.primeAdvantage)?.name ?? fill.primeAdvantage : 'None'}</strong>
           </summary>
@@ -334,7 +334,7 @@ function UnitEditor({ props, det, slot }: { props: Props; det: DetachmentInstanc
                 </label>
               ));
             // Long lists (e.g. a Sergeant's "exchange bolt pistol/chainsword for…") collapse; the
-            // summary says what's taken. Open to start with if something in it is already taken.
+            // summary says what is taken. They start open; selecting another slot opens them again.
             if (opts.length > 6) {
               const taken = opts.filter((o) => count(o.id) > 0).map((o) => `${count(o.id) > 1 ? `${count(o.id)}× ` : ''}${o.display?.item ?? o.name}`);
               return <OptGroup key={`${slot.id}|${g}`} title={title} total={opts.length} taken={taken}>{rows}</OptGroup>;

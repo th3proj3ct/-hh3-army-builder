@@ -15,6 +15,24 @@ export function loadTheme(): Theme {
   }
 }
 
+/** Which side the unit/detail panel sits on (wide screens; phones use a bottom sheet). Default left. */
+export type PanelSide = 'left' | 'right';
+const SIDE_KEY = 'hh3-panel-side';
+export function loadPanelSide(): PanelSide {
+  try {
+    return localStorage.getItem(SIDE_KEY) === 'right' ? 'right' : 'left';
+  } catch {
+    return 'left';
+  }
+}
+export function savePanelSide(side: PanelSide) {
+  try {
+    localStorage.setItem(SIDE_KEY, side);
+  } catch {
+    /* not remembered */
+  }
+}
+
 export function applyTheme(t: Theme) {
   if (t === 'auto') delete document.documentElement.dataset.theme;
   else document.documentElement.dataset.theme = t;

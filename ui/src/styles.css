@@ -124,6 +124,8 @@ button.link { background: none; border: none; color: var(--focus); padding: 0 4p
 button.link.danger, button.danger { color: var(--bad); }
 
 .layout { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 16px; padding: 16px; align-items: start; }
+/* Panel on the left (the default); the panel also comes first in the page, so Tab order matches. */
+.layout.panel-left { grid-template-columns: 400px minmax(0, 1fr); }
 .panel {
   position: sticky; top: 72px; max-height: calc(100vh - 88px); overflow: auto;
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px;
@@ -368,7 +370,7 @@ dl.rules dd { margin: 0; color: var(--muted); font-size: 13px; }
 .fit.kind-Warlord, .fit.kind-LordOfWar { border-color: var(--bad); }
 
 @media (max-width: 900px) {
-  .layout { grid-template-columns: minmax(0, 1fr); }
+  .layout, .layout.panel-left { grid-template-columns: minmax(0, 1fr); }
   /* Phones/tablets: the panel becomes a bottom sheet while something is selected. */
   .panel { position: fixed; left: 0; right: 0; bottom: 0; top: auto; z-index: 20; max-height: 62vh; border-radius: 12px 12px 0 0; box-shadow: 0 -6px 20px rgb(0 0 0 / 0.25); }
   .panel.idle { display: none; }

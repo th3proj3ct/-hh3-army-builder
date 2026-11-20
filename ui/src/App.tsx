@@ -9,7 +9,7 @@ import { Panel } from './Panel';
 import { PointsBar } from './PointsBar';
 import { deathGuardSample } from './samples';
 import { FACTIONS, armyListOf, emptyState, load, save, setPrimaryLegion, type BuilderState } from './state';
-import { THEMES, applyTheme, loadTheme, type Theme } from './theme';
+import { THEMES, applyTheme, loadPanelSide, loadTheme, savePanelSide, type PanelSide, type Theme } from './theme';
 
 const THEME_LABEL: Record<Theme, string> = { auto: '◐ Auto', light: '☀ Light', dark: '☾ Dark' };
 
@@ -30,6 +30,12 @@ export function App() {
   const [announce, setAnnounce] = useState('');
   const [view, setView] = useState<'builder' | 'reference'>('builder');
   const [theme, setTheme] = useState<Theme>(loadTheme);
+  const [side, setSide] = useState<PanelSide>(loadPanelSide);
+  const swapSide = () => {
+    const s2: PanelSide = side === 'left' ? 'right' : 'left';
+    savePanelSide(s2);
+    setSide(s2);
+  };
   const nextTheme = () => {
     const t = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length]!;
     applyTheme(t);
@@ -157,6 +163,9 @@ export function App() {
           <button onClick={() => { commit(emptyState(state.primaryLegion, r.pointsLimit, r.allegiance), 'New empty list'); setSel(null); }}>New list</button>
           <button onClick={() => { commit(deathGuardSample(), 'Loaded the Death Guard sample'); setSel(null); }}>Death Guard sample</button>
           <button onClick={exportJson}>Export JSON</button>
+          <button onClick={swapSide} title={`Move the unit panel to the ${side === 'left' ? 'right' : 'left'}`} aria-label={`Unit panel is on the ${side}. Move it to the ${side === 'left' ? 'right' : 'left'}`}>
+            {side === 'left' ? '◧ Panel left' : '◨ Panel right'}
+          </button>
           <button
             onClick={nextTheme}
             title={`Theme: ${theme === 'auto' ? 'follows your device' : theme}. Click for ${THEME_LABEL[THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length]!].slice(2)}.`}
@@ -170,9 +179,10 @@ export function App() {
       <PointsBar result={result} limit={r.pointsLimit} onShow={showMe} />
 
       {view === 'builder' ? (
-        <main className="layout">
+        <main className={`layout ${side === 'left' ? 'panel-left' : ''}`}>
+          {side === 'left' && <Panel state={state} sel={sel} setSel={setSel} commit={commit} issuesAt={issuesAt} />}
           <Chart state={state} result={result} sel={sel} setSel={setSel} commit={commit} issuesAt={issuesAt} />
-          <Panel state={state} sel={sel} setSel={setSel} commit={commit} issuesAt={issuesAt} />
+          {side === 'right' && <Panel state={state} sel={sel} setSel={setSel} commit={commit} issuesAt={issuesAt} />}
         </main>
       ) : (
         <main className="ref-layout">

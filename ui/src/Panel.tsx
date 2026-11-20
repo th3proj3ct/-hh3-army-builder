@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { CATALOG } from '../../src/catalog';
 import { explainChange } from '../../src/explain';
 import type { BattlefieldRole, DetachmentInstance, Issue, OptionDef, SlotDef, UnitDef } from '../../src/model';
@@ -139,6 +139,19 @@ function UnitPicker({ props, det, slot }: { props: Props; det: DetachmentInstanc
   );
 }
 
+/** A collapsible wargear category: starts open only if something in it is taken. */
+function OptGroup({ title, total, taken, children }: { title: string; total: number; taken: string[]; children: ReactNode }) {
+  const [open, setOpen] = useState(taken.length > 0);
+  return (
+    <details className="opt-group" open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
+      <summary>
+        <span className="opt-group-title">{title}</span> <span className="opt-group-count">({total} options{taken.length ? ` · ${taken.join(', ')}` : ''})</span>
+      </summary>
+      {children}
+    </details>
+  );
+}
+
 // ───────────────────────────── unit editor ──────────────────────────────
 function UnitEditor({ props, det, slot }: { props: Props; det: DetachmentInstance; slot: SlotDef }) {
   const { state, commit } = props;
@@ -239,9 +252,13 @@ function UnitEditor({ props, det, slot }: { props: Props; det: DetachmentInstanc
 
       {slot.prime && (
         <div className="field">
-          {/* A list of choices rather than a <select>: options can't mix bold names with plain descriptions. */}
-          <fieldset className="prime-choices">
-            <legend>Prime Advantage (★ Prime slot)</legend>
+          {/* A list of choices rather than a <select>: options can't mix bold names with plain descriptions.
+              Collapsed by default (the summary names the current choice); re-collapses per slot. */}
+          <details className="prime-details" key={`prime|${det.id}|${slot.id}`}>
+          <summary>
+            Prime Advantage (★ Prime slot): <strong>{fill.primeAdvantage ? primeDefs.get(fill.primeAdvantage)?.name ?? fill.primeAdvantage : 'None'}</strong>
+          </summary>
+          <fieldset className="prime-choices" aria-label="Prime Advantage">
             {(() => {
               const pick = (id: string | undefined) => commit(setPrime(state, det.id, slot.id, id));
               const choice = (id: string | undefined, name: string, summary?: string, why?: string) => (
@@ -270,6 +287,7 @@ function UnitEditor({ props, det, slot }: { props: Props; det: DetachmentInstanc
               );
             })()}
           </fieldset>
+          </details>
           {extra && (
             <div className="field">
               <label htmlFor="xrole">{primeDefs.get(extra.grantedBy.primeAdvantageId)?.name} adds one slot to this detachment. Its role:</label>
@@ -296,10 +314,9 @@ function UnitEditor({ props, det, slot }: { props: Props; det: DetachmentInstanc
             Imported from BSData. Free default wargear isn't listed. Legion armoury items appear for that Legion only
             {unitFaction ? ` (showing ${unitFaction})` : ''}.
           </p>
-          {[...groups.entries()].map(([g, opts]) => (
-            <fieldset key={g}>
-              <legend>{g.includes('/') ? g.split('/').slice(1).join(' › ').replace(/-/g, ' ') : g}</legend>
-              {opts.map((o) => (
+          {[...groups.entries()].map(([g, opts]) => {
+            const title = g.includes('/') ? g.split('/').slice(1).join(' › ').replace(/-/g, ' ') : g;
+            const rows = opts.map((o) => (
                 <label key={o.id} className="opt">
                   <input
                     type="number"
@@ -315,9 +332,20 @@ function UnitEditor({ props, det, slot }: { props: Props; det: DetachmentInstanc
                   </span>
                   <span className="opt-pts">+{o.cost.points}{o.cost.per === 'model' ? '/model' : ''}</span>
                 </label>
-              ))}
-            </fieldset>
-          ))}
+              ));
+            // Long lists (e.g. a Sergeant's "exchange bolt pistol/chainsword for…") collapse; the
+            // summary says what's taken. Open to start with if something in it is already taken.
+            if (opts.length > 6) {
+              const taken = opts.filter((o) => count(o.id) > 0).map((o) => `${count(o.id) > 1 ? `${count(o.id)}× ` : ''}${o.display?.item ?? o.name}`);
+              return <OptGroup key={`${slot.id}|${g}`} title={title} total={opts.length} taken={taken}>{rows}</OptGroup>;
+            }
+            return (
+              <fieldset key={g}>
+                <legend>{title}</legend>
+                {rows}
+              </fieldset>
+            );
+          })}
         </details>
       )}
 

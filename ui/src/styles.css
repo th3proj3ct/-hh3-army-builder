@@ -3,7 +3,7 @@
   --surface: #ffffff;
   --surface-2: #efede8;
   --text: #1d1c1a;
-  --muted: #6a675f;
+  --muted: #57544c;
   --border: #d9d5cc;
   /* Colour palette (the toolbar's colour picker). Gold by default; each palette below sets
      a light-mode and a dark-mode version of the accent, its soft tint and the Prime colour. */
@@ -28,7 +28,7 @@
     --surface: #1f1e1b;
     --surface-2: #2a2925;
     --text: #ece9e2;
-    --muted: #a39f95;
+    --muted: #c9c4b9;
     --border: #3a3832;
     --accent: var(--a-dark);
     --accent-soft: var(--a-dark-soft);
@@ -50,7 +50,7 @@
   --surface: #1f1e1b;
   --surface-2: #2a2925;
   --text: #ece9e2;
-  --muted: #a39f95;
+  --muted: #c9c4b9;
   --border: #3a3832;
   --accent: var(--a-dark);
   --accent-soft: var(--a-dark-soft);
@@ -429,3 +429,12 @@ dl.rules dd { margin: 0; color: var(--muted); font-size: 13px; }
 .prime-choice .why { font-size: 12px; }
 .prime-locked > summary { cursor: pointer; color: var(--muted); font-size: 13px; margin: 4px 0; }
 .prime-locked { display: flex; flex-direction: column; gap: 4px; }
+
+/* Collapsible Prime Advantage picker and long wargear categories. */
+.prime-details > summary, .opt-group > summary { cursor: pointer; padding: 6px 0; }
+.prime-details > summary { font-weight: 600; }
+.prime-details[open] > summary { margin-bottom: 4px; }
+.opt-group { border: 1px solid var(--border); border-radius: 6px; margin: 6px 0; padding: 2px 8px 6px; }
+.opt-group > summary { font-size: 13px; }
+.opt-group-title { color: var(--text); font-weight: 600; text-transform: capitalize; }
+.opt-group-count { color: var(--muted); }

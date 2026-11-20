@@ -162,6 +162,10 @@ button.link.danger, button.danger { color: var(--bad); }
 .slot.error { border-color: var(--bad); border-style: solid; }
 .slot.selected { outline: 3px solid var(--focus); outline-offset: 1px; }
 .slot-role { font-size: 12px; color: var(--muted); display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+/* Unit (or "+ Add …") first, problems next, role icon and label pinned to the bottom left. */
+.slot > .slot-unit, .slot > .slot-empty { order: 1; }
+.slot > .slot-err { order: 2; }
+.slot > .slot-role { order: 3; margin-top: auto; padding-top: 4px; }
 .role-icon { flex: none; vertical-align: middle; }
 .kind .role-icon { margin-right: 4px; }
 .legend li { min-height: 38px; }

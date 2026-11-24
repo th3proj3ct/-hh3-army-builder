@@ -111,7 +111,7 @@ From the Warhammer Community PDF "Legiones Astartes Primary Detachments" (Nov 20
 
 **Ambiguous:** "Prime Advantages which add additional Battlefield Role Slots to a Detachment may not be selected" is applied to every detachment in the army (it's listed with the army-wide restrictions). ⚠️
 
-**Not enforced (in-game, not list-building):** Victory Points for destroyed Elites/Heavy Assault (Pride) or War-engine (Fury) units; Pride's Vanguard (X) → Line (1) swap; Squadron Tactics (Armoured Spearhead); Orbital Drop Protocols and the Orbital Drop Table. **Not done:** Ancient of War's "not Malefic" condition (Malefic isn't imported as a model type).
+**Not enforced (in-game, not list-building):** Victory Points for destroyed Elites/Heavy Assault (Pride) or War-engine (Fury) units; Pride's Vanguard (X) → Line (1) swap; Squadron Tactics (Armoured Spearhead); Orbital Drop Protocols and the Orbital Drop Table. Ancient of War's "not Malefic" condition is checked: BSData writes that sub-type as "Malefic Sub-type", and the importer now reads it (Mhara Gal Dreadnought is the Malefic Walker it rules out).
 
 ## Legion Additional Detachments (14 Nov 2026)
 

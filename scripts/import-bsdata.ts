@@ -234,7 +234,8 @@ function leaves(n: Node, ctx: Ctx = { cats: new Set() }, legions: Set<string> = 
 const gate = (v: Set<string>) => (v.size === LEGIONS.length ? {} : { factionTraits: [...v].sort() });
 const modelTagsOf = (n: Node): string[] =>
   (n.categoryLinks ?? [])
-    .map((c: Node) => /^(.*?) Model (Sub-)?Type$/i.exec(String(c.name))?.[1])
+    // "Infantry Model Type", "Heavy Model Sub-Type", and the odd one without "Model" ("Malefic Sub-type").
+    .map((c: Node) => /^(.*?) (?:Model (?:Sub-)?Type|Sub-Type)$/i.exec(String(c.name))?.[1])
     .filter(Boolean)
     .map((t: string) => t.trim());
 

@@ -180,3 +180,16 @@ describe('Sky-Hunter Phalanx: White Scars slot exchanges', () => {
     expect(exchangesFor(dg, dg.roster.detachments[0]!, 'sky-hunter-phalanx.Retinue1')).toEqual([]);
   });
 });
+
+describe('Ancient of War: Walkers that are not Malefic', () => {
+  it('Malefic is imported as a model sub-type (Mhara Gal Dreadnought, Gal Vorbak)', () => {
+    expect(byId.get('mhara-gal-dreadnought')?.modelTags).toEqual(expect.arrayContaining(['Walker', 'Malefic']));
+    expect(byId.get('gal-vorbak')?.modelTags).toContain('Malefic');
+    expect(byId.get('contemptor-dreadnought')?.modelTags).not.toContain('Malefic');
+  });
+  it('a Mhara Gal Dreadnought (Malefic Walker) may not take it', () => {
+    const r = army(det('p', 'fury-of-the-ancients', { WarEngine1: { unit: 'mhara-gal-dreadnought', prime: 'ancient-of-war' } }));
+    const e = result(r).errors.find((x) => x.ruleId === 'PRIME-ELIGIBILITY');
+    expect(e?.message).toMatch(/Malefic/);
+  });
+});

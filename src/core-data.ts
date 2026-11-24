@@ -570,7 +570,8 @@ export const ASTARTES_PRIMARY_PRIME_ADVANTAGES: PrimeAdvantageDef[] = [
     effect: { kind: 'modelBuff' },
     allowedForUnique: false,
     onlyInDetachments: ['fury-of-the-ancients'],
-    unitRequirement: { modelTags: ['Walker'] },
+    // "a Model with the Walker Type that does not have the Malefic Sub-Type".
+    unitRequirement: { modelTags: ['Walker'], excludeModelTags: ['Malefic'] },
     source: wc('Fury of the Ancients › Ancient of War'),
   },
   {

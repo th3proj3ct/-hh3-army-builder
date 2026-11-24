@@ -1168,7 +1168,8 @@
       "modelTags": [
         "Paragon",
         "Unique",
-        "Antigrav"
+        "Antigrav",
+        "Malefic"
       ],
       "rules": [
         "Master of the Legion"
@@ -3499,7 +3500,8 @@
         "Infantry",
         "Unique",
         "Command",
-        "Antigrav"
+        "Antigrav",
+        "Malefic"
       ],
       "points": {
         "base": 240,
@@ -8665,7 +8667,8 @@
       "allegiance": "Traitor",
       "factionTrait": "Mechanicum",
       "modelTags": [
-        "Automata"
+        "Automata",
+        "Malefic"
       ],
       "subFaction": "Cybernetica",
       "points": {
@@ -8704,7 +8707,9 @@
       "factionTrait": "Mechanicum",
       "modelTags": [
         "Automata",
-        "Heavy"
+        "Heavy",
+        "Unstoppable",
+        "Malefic"
       ],
       "subFaction": "Archimandrite",
       "points": {
@@ -25769,7 +25774,8 @@
       "allegiance": "Traitor",
       "factionTrait": "Mechanicum",
       "modelTags": [
-        "Automata"
+        "Automata",
+        "Malefic"
       ],
       "subFaction": "Cybernetica",
       "points": {
@@ -37597,6 +37603,7 @@
       "factionTrait": null,
       "modelTags": [
         "Infantry",
+        "Malefic",
         "Sergeant"
       ],
       "points": {
@@ -39455,7 +39462,8 @@
       "modelTags": [
         "Paragon",
         "Unique",
-        "Antigrav"
+        "Antigrav",
+        "Malefic"
       ],
       "rules": [
         "Master of the Legion"
@@ -39960,7 +39968,8 @@
       "allegiance": "Traitor",
       "factionTrait": "Word Bearers",
       "modelTags": [
-        "Infantry"
+        "Infantry",
+        "Malefic"
       ],
       "points": {
         "base": 250,
@@ -45282,7 +45291,8 @@
       "factionTrait": null,
       "modelTags": [
         "Infantry",
-        "Command"
+        "Command",
+        "Malefic"
       ],
       "points": {
         "base": 135,
@@ -46120,7 +46130,8 @@
       "allegiance": "Any",
       "factionTrait": null,
       "modelTags": [
-        "Infantry"
+        "Infantry",
+        "Malefic"
       ],
       "points": {
         "base": 140,
@@ -60142,7 +60153,8 @@
       "allegiance": "Any",
       "factionTrait": "Mechanicum",
       "modelTags": [
-        "Vehicle"
+        "Vehicle",
+        "Rapid"
       ],
       "subFaction": "Macrotek",
       "points": {
@@ -60191,7 +60203,8 @@
       "allegiance": "Any",
       "factionTrait": "Mechanicum",
       "modelTags": [
-        "Vehicle"
+        "Vehicle",
+        "Rapid"
       ],
       "subFaction": "Macrotek",
       "points": {
@@ -60240,7 +60253,9 @@
       "allegiance": "Traitor",
       "factionTrait": "Mechanicum",
       "modelTags": [
-        "Automata"
+        "Automata",
+        "Malefic",
+        "Unstoppable"
       ],
       "subFaction": "Archimandrite",
       "points": {
@@ -69754,7 +69769,8 @@
       "allegiance": "Any",
       "factionTrait": "Mechanicum",
       "modelTags": [
-        "Vehicle"
+        "Vehicle",
+        "Ordinatus"
       ],
       "subFaction": "Macrotek",
       "points": {
@@ -69778,7 +69794,8 @@
       "allegiance": "Any",
       "factionTrait": "Mechanicum",
       "modelTags": [
-        "Vehicle"
+        "Vehicle",
+        "Ordinatus"
       ],
       "subFaction": "Macrotek",
       "points": {
@@ -69802,7 +69819,8 @@
       "allegiance": "Any",
       "factionTrait": "Mechanicum",
       "modelTags": [
-        "Vehicle"
+        "Vehicle",
+        "Ordinatus"
       ],
       "subFaction": "Macrotek",
       "points": {
@@ -71100,7 +71118,8 @@
       "allegiance": "Traitor",
       "factionTrait": "Word Bearers",
       "modelTags": [
-        "Walker"
+        "Walker",
+        "Malefic"
       ],
       "points": {
         "base": 210,
@@ -98054,6 +98073,7 @@
       "modelTags": [
         "Infantry",
         "Heavy",
+        "Malefic",
         "Sergeant",
         "Champion"
       ],
@@ -120183,7 +120203,8 @@
       "allegiance": "Any",
       "factionTrait": null,
       "modelTags": [
-        "Vehicle"
+        "Vehicle",
+        "Rapid"
       ],
       "points": {
         "base": 80,
@@ -125056,7 +125077,8 @@
       "factionTrait": null,
       "modelTags": [
         "Cavalry",
-        "Antigrav"
+        "Antigrav",
+        "Malefic"
       ],
       "points": {
         "base": 130,
@@ -158827,6 +158849,7 @@
         "Command",
         "Unique",
         "Infantry",
+        "Malefic",
         "Champion"
       ],
       "points": {

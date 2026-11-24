@@ -7,6 +7,7 @@ import { roleLabel } from '../../src/validate';
 import type { Selection } from './App';
 import { slotLabel } from './Chart';
 import { EyeButton } from './datasheet';
+import { ItemInfo } from './ItemInfo';
 import { ROLE_ORDER, extraRequirements, forArmyList, forPrimaryLegion, slotSummary, unitsFitting } from './fits';
 import { detachmentReasons, splitMessage, unitReasons } from './reasons';
 import {
@@ -16,6 +17,8 @@ import {
   duplicateUnit,
   planWithCommander,
   decurionFor,
+  exchangeSlot,
+  exchangesFor,
   removeBenefitSlot,
   planWithSubFaction,
   unlockAllowance,
@@ -45,6 +48,8 @@ interface Props {
   commit: (s: BuilderState, msg?: string) => void;
   issuesAt: (detId: string, slotId?: string) => Issue[];
 }
+
+const article = (r: BattlefieldRole) => (/^[AEIOU]/.test(roleLabel(r)) ? 'an' : 'a');
 
 /** "Heavy Assault ×2: E.g. Cataphractii Terminator Squad, Destroyer Assault Squad, ..." */
 function roleTooltip(label: string, units: UnitDef[]): string {
@@ -121,6 +126,39 @@ function UnitPicker({ props, det, slot }: { props: Props; det: DetachmentInstanc
           Remove this extra slot
         </button>
       )}
+      {(() => {
+        // Sky-Hunter Phalanx (White Scars): exchange this slot for a Golden Keshig / Kyzagan slot, or back.
+        const exchanged = det.slotExchanges?.[slot.id];
+        const base = detDefs.get(det.defId)?.slots.find((x) => x.id === slot.id);
+        if (exchanged && base)
+          return (
+            <p className="exchange">
+              Exchanged from {roleLabel(base.role)} ({detDefs.get(det.defId)?.name}, {exchangesFor(state, det, slot.id).find((x) => x.to === exchanged)?.faction ?? 'Faction'} only).{' '}
+              <button className="link" onClick={() => commit(exchangeSlot(state, det.id, slot.id, undefined), `${slotLabel(det, slot)} changed back to ${roleLabel(base.role)}`)}>
+                Change back to {roleLabel(base.role)}
+              </button>
+            </p>
+          );
+        const options = exchangesFor(state, det, slot.id);
+        if (!options.length) return null;
+        return (
+          <div className="exchange">
+            {options.map((x) => {
+              const units = x.unitIds.map((id) => unitDefs.get(id)?.name ?? id).join(' or ');
+              return (
+                <button
+                  key={x.to}
+                  className="ghost"
+                  title={`${detDefs.get(det.defId)?.name} (${x.faction}): exchange this ${roleLabel(x.from)} slot for ${article(x.to)} ${roleLabel(x.to)} slot that only takes ${units}${fill?.unit ? '. The unit in it is removed.' : ''}`}
+                  onClick={() => commit(exchangeSlot(state, det.id, slot.id, x.to), `${slotLabel(det, slot)} exchanged for ${article(x.to)} ${roleLabel(x.to)} slot (${units})`)}
+                >
+                  ⇄ Exchange for {article(x.to)} {roleLabel(x.to)} slot ({units})
+                </button>
+              );
+            })}
+          </div>
+        );
+      })()}
       <p className="hint">
         {special ? 'Special Assignment: High Command units may fill this Command slot. ' : ''}
         Locked units say why.{' '}
@@ -168,6 +206,9 @@ function UnitEditor({ props, det, slot }: { props: Props; det: DetachmentInstanc
   const def = unitDefs.get(unit.unitId)!;
   const errs = props.issuesAt(det.id, slot.id);
   const [replacing, setReplacing] = useState(false);
+  // Wargear options whose details (profile / rule text) are open.
+  const [info, setInfo] = useState<Set<string>>(new Set());
+  const toggleInfo = (id: string) => setInfo((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const extra = det.extraSlots.find((x) => x.grantedBy.slotId === slot.id);
   const count = (id: string) => unit.options.find((o) => o.optionId === id)?.count ?? 0;
   const dupTarget = duplicateTarget(state, det.id, slot.id);
@@ -191,6 +232,9 @@ function UnitEditor({ props, det, slot }: { props: Props; det: DetachmentInstanc
   // (an already-taken one stays visible so its error can be fixed).
   const unitFaction = unit.factionTrait ?? def.factionTrait ?? undefined;
   const shown = def.options.filter((o) => !o.factionTraits || (unitFaction && o.factionTraits.includes(unitFaction)) || count(o.id) > 0);
+  // "Forge Lord: Thunder hammer" → "Thunder hammer" when the unit has only one kind of model.
+  const optionModels = new Set(def.options.map((o) => o.display?.model).filter(Boolean));
+  const optLabel = (o: OptionDef) => (optionModels.size <= 1 && o.display ? o.display.item : o.name);
   const groups = new Map<string, OptionDef[]>();
   for (const o of shown) {
     const g = o.group ?? '(other upgrades)';
@@ -323,23 +367,39 @@ function UnitEditor({ props, det, slot }: { props: Props; det: DetachmentInstanc
             {unitFaction ? ` (showing ${unitFaction})` : ''}.
           </p>
           {[...groups.entries()].map(([g, opts]) => {
-            const title = g.includes('/') ? g.split('/').slice(1).join(' › ').replace(/-/g, ' ') : g;
+            // Group keys are "unit/model/group"; leave the model out when there's only one kind.
+            const title = g.includes('/') ? g.split('/').slice(optionModels.size <= 1 ? 2 : 1).join(' › ').replace(/-/g, ' ') : g;
             const rows = opts.map((o) => (
-                <label key={o.id} className="opt">
+                <div key={o.id} className="opt-row">
+                <label className="opt">
                   <input
                     type="number"
                     min={0}
                     max={o.max === 'models' ? unit.models : o.max}
                     value={count(o.id)}
                     onChange={(e) => commit(setOptionCount(state, det.id, slot.id, o.id, Math.max(0, Number(e.target.value) || 0)))}
-                    aria-label={`${o.name} count`}
+                    aria-label={`${optLabel(o)} count`}
                   />
                   <span>
-                    {o.name}
+                    {optLabel(o)}
                     {o.factionTraits && <span className="tag armoury">{o.factionTraits.join('/')} armoury</span>}
                   </span>
                   <span className="opt-pts">+{o.cost.points}{o.cost.per === 'model' ? '/model' : ''}</span>
                 </label>
+                <button
+                  type="button"
+                  className={`eye ${info.has(o.id) ? 'on' : ''}`}
+                  aria-expanded={info.has(o.id)}
+                  aria-label={`What ${o.display?.item ?? o.name} does`}
+                  title={`What ${o.display?.item ?? o.name} does`}
+                  onClick={() => toggleInfo(o.id)}
+                >
+                  <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                    <path d="M12 5c-5 0-9 4.5-10 7 1 2.5 5 7 10 7s9-4.5 10-7c-1-2.5-5-7-10-7zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm0-6a2 2 0 1 0 0 4 2 2 0 0 0 0-4z" fill="currentColor" />
+                  </svg>
+                </button>
+                {info.has(o.id) && <ItemInfo unitId={def.id} item={o.display?.item ?? o.name} />}
+                </div>
               ));
             // Long lists (e.g. a Sergeant's "exchange bolt pistol/chainsword for…") collapse; the
             // summary says what is taken. They start open; selecting another slot opens them again.

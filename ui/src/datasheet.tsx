@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { UnitInstance } from '../../src/model';
-import { buildLoadout, loadDatasheets, loadGlossary, lookupRule, splitRules, type Datasheet, type Glossary } from './loadout';
+import { buildLoadout, itemKey, loadDatasheets, loadGlossary, loadWargear, lookupRule, splitRules, type Datasheet, type Glossary, type WargearText } from './loadout';
 import { unitPoints } from '../../src/points';
 import { roleLabel } from '../../src/validate';
 import { detachmentsFor, howAvailable } from './fits';
@@ -16,6 +16,8 @@ export interface DatasheetRequest {
   /** Legion to show for "[Legiones Astartes]" units not yet in the list. */
   faction?: string;
   allegiance?: string;
+  /** Show "Fits in these detachments" (the Unit reference tab; the builder already shows where units go). */
+  showFits?: boolean;
 }
 
 const Ctx = createContext<(r: DatasheetRequest) => void>(() => {});
@@ -31,7 +33,7 @@ export function DatasheetProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function EyeButton({ unitId, inst, faction, allegiance, label }: DatasheetRequest & { label?: string }) {
+export function EyeButton({ unitId, inst, faction, allegiance, showFits, label }: DatasheetRequest & { label?: string }) {
   const open = useDatasheet();
   const name = unitDefs.get(unitId)?.name ?? unitId;
   return (
@@ -42,7 +44,7 @@ export function EyeButton({ unitId, inst, faction, allegiance, label }: Datashee
       title="View datasheet"
       onClick={(e) => {
         e.stopPropagation();
-        open({ unitId, ...(inst ? { inst } : {}), ...(faction ? { faction } : {}), ...(allegiance ? { allegiance } : {}) });
+        open({ unitId, ...(inst ? { inst } : {}), ...(faction ? { faction } : {}), ...(allegiance ? { allegiance } : {}), ...(showFits ? { showFits } : {}) });
       }}
     >
       <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
@@ -125,6 +127,7 @@ function DatasheetDialog({ req, onClose }: { req: DatasheetRequest; onClose: () 
   const [sheets, setSheets] = useState<Record<string, Datasheet> | null>(null);
   const [failed, setFailed] = useState(false);
   const [glossary, setGlossary] = useState<Glossary>({});
+  const [wargearText, setWargearText] = useState<WargearText>({});
   const [tip, setTip] = useState<Tip | null>(null);
   // Leaving a rule name hides the pop-up after a moment, unless the pointer moved onto it.
   const hideTimer = useRef<number | undefined>(undefined);
@@ -138,6 +141,7 @@ function DatasheetDialog({ req, onClose }: { req: DatasheetRequest; onClose: () 
     if (d && !d.open) d.showModal();
     loadDatasheets().then(setSheets, () => setFailed(true));
     loadGlossary().then(setGlossary, () => {});
+    loadWargear().then(setWargearText, () => {});
   }, []);
 
   if (!def) return null;
@@ -146,7 +150,7 @@ function DatasheetDialog({ req, onClose }: { req: DatasheetRequest; onClose: () 
   const allegiance = def.allegiance !== 'Any' ? def.allegiance : req.allegiance;
   const traits = (sheet?.traits ?? []).map((t) => (t === '[Legiones Astartes]' && faction ? faction : t === '[Allegiance]' && allegiance ? allegiance : t));
   const optionNames = new Map(def.options.map((o) => [o.id, o]));
-  const fits = detachmentsFor(def);
+  const fits = req.showFits ? detachmentsFor(def) : [];
   // Legion armoury weapons show only for that Legion (tagged when no Legion is known).
   // As built: only the weapons this unit actually carries (defaults minus exchanges, plus options taken).
   const loadout = sheet && req.inst ? buildLoadout(sheet, def.options, req.inst) : null;
@@ -281,6 +285,27 @@ function DatasheetDialog({ req, onClose }: { req: DatasheetRequest; onClose: () 
                 </dl>
               </section>
             )}
+            {(() => {
+              // Non-weapon wargear the unit carries (as built) or starts with, and what it does.
+              const items = loadout
+                ? loadout.lines.flatMap((l) => l.items.map((it) => it.replace(/^\d+× /, '')))
+                : sheet.wargear.flatMap((w) => w.items);
+              const withText = [...new Set(items)].map((it) => wargearText[itemKey(it)]).filter((x): x is WargearText[string] => !!x);
+              const unique = withText.filter((x, i) => withText.findIndex((y) => y.name === x.name) === i);
+              return unique.length ? (
+                <section>
+                  <h3>Wargear rules</h3>
+                  <dl className="rules">
+                    {unique.map((w) => (
+                      <div key={w.name}>
+                        <dt>{w.name}</dt>
+                        <dd>{w.summary && <strong>{w.summary} </strong>}{w.text}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </section>
+              ) : null;
+            })()}
             {traits.length > 0 && <p className="hint">Traits: {traits.join(', ')}</p>}
           </>
         )}
@@ -296,6 +321,7 @@ function DatasheetDialog({ req, onClose }: { req: DatasheetRequest; onClose: () 
           </section>
         )}
 
+        {req.showFits && (
         <section>
           <h3>Fits in these detachments</h3>
           <ul className="plain fits">
@@ -311,6 +337,7 @@ function DatasheetDialog({ req, onClose }: { req: DatasheetRequest; onClose: () 
             {!fits.length && <li className="hint">No detachment in this data set has a slot for this unit yet.</li>}
           </ul>
         </section>
+        )}
         <p className="hint">Source: BSData {def.source.version}. Stats and points are for reference; check the book in a dispute.</p>
       </div>
       </TipCtx.Provider>

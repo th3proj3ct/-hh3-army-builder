@@ -463,3 +463,14 @@ button.primary:hover { filter: brightness(1.08); }
 /* Extra slots from an alternative Primary Detachment's benefit. */
 .benefit-slots { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
 .benefit-slots .hint { margin: 0; flex-basis: 100%; }
+.exchange { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 4px 0 8px; font-size: 13px; }
+
+/* Wargear option row: the option, an eye button, and (when open) what the item does. */
+.opt-row { display: grid; grid-template-columns: 1fr auto; align-items: center; column-gap: 6px; }
+.opt-row > .item-info { grid-column: 1 / -1; }
+.eye.on { color: var(--accent); border-color: var(--accent); }
+.item-info { margin: 2px 0 8px 64px; padding: 8px; border-left: 3px solid var(--accent); background: var(--surface-2); border-radius: 0 6px 6px 0; font-size: 13px; }
+.item-info .stats { font-size: 12px; }
+.item-rules { margin: 6px 0 0; }
+.item-rules li { margin: 2px 0; }
+.item-text { margin: 4px 0 0; }

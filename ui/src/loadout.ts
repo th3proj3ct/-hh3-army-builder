@@ -15,9 +15,12 @@ export interface Datasheet {
 
 /** Full text of a special rule, keyed by ruleKey() ("shred (x)"). */
 export type Glossary = Record<string, { name: string; text: string }>;
+/** What a non-weapon wargear item does (BSData "Wargear" profiles), keyed by itemKey(). */
+export type WargearText = Record<string, { name: string; summary: string; text: string }>;
 interface DatasheetFile {
   datasheets: Record<string, Datasheet>;
   glossary?: Glossary;
+  wargear?: WargearText;
 }
 
 // Datasheets are display-only and large, so they load on first use (own bundle chunk).
@@ -25,6 +28,18 @@ let cache: Promise<DatasheetFile> | null = null;
 const loadFile = () => (cache ??= import('../../data/bsdata/datasheets.json').then((m) => m.default as unknown as DatasheetFile));
 export const loadDatasheets = () => loadFile().then((f) => f.datasheets);
 export const loadGlossary = () => loadFile().then((f) => f.glossary ?? {});
+export const loadWargear = () => loadFile().then((f) => f.wargear ?? {});
+/** Everything the item viewer needs, loaded once. */
+export const loadAll = () => loadFile().then((f) => ({ datasheets: f.datasheets, glossary: f.glossary ?? {}, wargear: f.wargear ?? {} }));
+/** Wargear key: lower case, straight apostrophes, single spaces (matches scripts/import-bsdata.ts › itemKey). */
+export const itemKey = (name: string) => name.toLowerCase().replace(/[’‘]/g, "'").replace(/\s+/g, ' ').trim();
+
+/** An item's weapon profiles (via the datasheet's item → profiles map) and its wargear text, if any. */
+export function itemInfo(sheet: Datasheet | undefined, wargear: WargearText, item: string) {
+  const profiles = sheet?.items?.[item] ?? [item];
+  const weapons = (sheet?.weapons ?? []).filter((w) => profiles.includes(w.name));
+  return { weapons, text: wargear[itemKey(item)] };
+}
 
 /**
  * Glossary key: lower case, straight apostrophes, single spaces, and a trailing "(…)" value made

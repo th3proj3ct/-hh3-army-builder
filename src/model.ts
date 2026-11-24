@@ -247,6 +247,11 @@ export interface PrimaryRules {
   extraSlots?: { roles: BattlefieldRole[]; perFilledRoles?: BattlefieldRole[]; perNonVehicleUnit?: boolean };
   /** Units without any of these tags can't deploy (Sky-Hunter Phalanx): a warning, not an error. */
   warnUnlessTags?: ModelTag[];
+  /**
+   * "If this Detachment is from the <faction> Faction, any number of <from> Slots may each be
+   * exchanged for one <to> Slot that may only be filled with <units>" (Sky-Hunter: White Scars).
+   */
+  slotExchanges?: { faction: string; from: BattlefieldRole; to: BattlefieldRole; unitIds: string[] }[];
 }
 
 // ─────────────────────────── catalog: prime advantages ───────────────────────
@@ -377,6 +382,8 @@ export interface DetachmentInstance {
   extraSlots: ExtraSlot[];
   /** Slots added by the detachment's own benefit (PrimaryRules.extraSlots), not by a Prime Advantage. */
   benefitSlots?: { id: string; role: BattlefieldRole }[];
+  /** Chart slots exchanged for another role (PrimaryRules.slotExchanges): slot id → new role. */
+  slotExchanges?: Record<string, BattlefieldRole>;
   fills: SlotFill[];
 }
 

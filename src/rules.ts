@@ -80,6 +80,8 @@ export const RULES = Object.fromEntries(
       'Applied to every detachment in the army, since the restriction is listed with the army-wide ones; it could be read as the Primary Detachment only.'),
     r('PRIMARY-UNIT-LIMITS', 'An alternative Primary Detachment limits which units the army may include', lapd('Restrictions')),
     r('PRIMARY-EXTRA-SLOTS', 'Extra slots from a Primary Detachment benefit are limited by what the army includes', lapd('Benefits')),
+    r('PRIMARY-SLOT-EXCHANGE', 'Slot exchanges (Sky-Hunter Phalanx: White Scars) only as the detachment offers, and only for its Faction', lapd('Sky-Hunter Phalanx › Benefits'), 'ambiguous',
+      'An exchanged slot is treated as a plain (non-Prime) slot: the text says the slot is exchanged "for one Elites Slot" without mentioning Prime.'),
     r('PRIMARY-DEPLOYMENT', 'Some units in this army can\'t deploy with its Primary Detachment (advisory)', lapd('Sky-Hunter Phalanx')),
     r('DET-UNLOCK-SOURCE', 'Only Primary, Apex and Allied detachments can unlock further detachments', aod('Detachment Types › Primary / Apex / Allied Detachments'), 'ambiguous',
       'The FOC summary says slots filled "in any Detachment" count, but the per-type text only grants unlocks to Primary, Apex and Allied. No core Auxiliary has Command slots, so this only matters for future detachments.'),

@@ -82,7 +82,7 @@ function RefRow({ u, state, showAll }: { u: UnitDef; state: BuilderState; showAl
   return (
     <li className={`ref-row ${open ? 'open' : ''}`}>
       <div className="ref-main">
-        <EyeButton unitId={u.id} {...(faction ? { faction } : {})} allegiance={state.roster.allegiance} />
+        <EyeButton unitId={u.id} {...(faction ? { faction } : {})} allegiance={state.roster.allegiance} showFits />
         <RoleIcon role={u.role} size={32} title />
         <span className="unit-name">{u.name}</span>
         {u.factionTrait && <span className="tag">{u.factionTrait}</span>}

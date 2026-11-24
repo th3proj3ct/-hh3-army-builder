@@ -681,9 +681,12 @@ const sorted = [...units.values()].sort((a, b) => a.name.localeCompare(b.name));
 // with its full BSData text. "Shred (6)" is looked up as "Shred (X)". Where a name has
 // more than one text, Special Rules.json wins, then the game system, then catalogues.
 const ruleText = new Map<string, string>();
+// Wargear text (cyber-familiar, augury scanner…) sits in "Wargear" profiles: a quoted summary and a description.
+const wargearText = new Map<string, { name: string; summary: string; text: string }>();
+const itemKey = (name: string) => name.toLowerCase().replace(/[’‘]/g, "'").replace(/\s+/g, ' ').trim();
 {
   const files = readdirSync(repo).filter((f) => f.endsWith('.json'));
-  const rank = (f: string) => (f === 'Special Rules.json' ? 0 : f === 'Horus Heresy 3rd Edition.json' ? 1 : 2);
+  const rank = (f: string) => (f === 'Special Rules.json' || f === 'Wargear.json' ? 0 : f === 'Horus Heresy 3rd Edition.json' ? 1 : 2);
   for (const f of files.sort((a, b) => rank(a) - rank(b))) {
     const walk = (o: unknown) => {
       if (Array.isArray(o)) o.forEach(walk);
@@ -691,6 +694,10 @@ const ruleText = new Map<string, string>();
         const n = o as Node;
         if (typeof n.name === 'string' && typeof n.description === 'string' && n.description.trim().length > 20 && !n.typeId && !ruleText.has(n.name.trim()))
           ruleText.set(n.name.trim(), n.description.replace(/\s+/g, ' ').trim());
+        if (n.typeName === 'Wargear' && typeof n.name === 'string' && !wargearText.has(itemKey(n.name))) {
+          const c = (k: string) => String((n.characteristics ?? []).find((x: Node) => x.name === k)?.$text ?? '').replace(/\s+/g, ' ').trim();
+          if (c('Description') || c('Summary')) wargearText.set(itemKey(n.name), { name: n.name.trim(), summary: c('Summary').replace(/^["“]|["”]$/g, ''), text: c('Description') });
+        }
         Object.values(n).forEach(walk);
       }
     };
@@ -727,10 +734,19 @@ for (const u of sorted) {
   }
   for (const w of ds.weapons) for (const part of splitRules(w.stats['Special Rules'] ?? '')) wantRule(part);
 }
+// Wargear text for every item a unit carries or can take.
+const wargear: Record<string, { name: string; summary: string; text: string }> = {};
+for (const u of sorted) {
+  const names = [...u.options.map((o) => o.display?.item ?? o.name), ...(datasheets[u.id]?.wargear.flatMap((w) => w.items) ?? [])];
+  for (const n of names) {
+    const hit = wargearText.get(itemKey(n));
+    if (hit) wargear[itemKey(n)] = hit;
+  }
+}
 
 writeFileSync(
   join(outDir, 'datasheets.json'),
-  JSON.stringify({ commit: sha, glossary, datasheets: Object.fromEntries(sorted.map((u) => [u.id, datasheets[u.id]])) }) + '\n',
+  JSON.stringify({ commit: sha, glossary, wargear, datasheets: Object.fromEntries(sorted.map((u) => [u.id, datasheets[u.id]])) }) + '\n',
 );
 writeFileSync(join(outDir, 'units.json'),JSON.stringify({ source: 'https://github.com/BSData/horus-heresy-3rd-edition', commit: sha, catalogues: catalogueFiles, units: sorted }, null, 2) + '\n');
 

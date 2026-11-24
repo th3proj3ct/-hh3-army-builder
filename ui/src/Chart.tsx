@@ -45,6 +45,9 @@ export function slotLabel(det: DetachmentInstance, slot: SlotDef): string {
   if (det.benefitSlots?.some((x) => x.id === slot.id)) return `${roleLabel(slot.role)} (extra, ${detDefs.get(det.defId)?.name ?? 'benefit'})`;
   if (extra) return `${roleLabel(slot.role)} (extra, ${primeDefs.get(extra.grantedBy.primeAdvantageId)?.name ?? 'Prime'})`;
   const n = /(\d+)$/.exec(slot.id)?.[1];
+  // An exchanged slot keeps its original name for reference: "Elites (for Retinue 1)".
+  const was = det.slotExchanges?.[slot.id] && detDefs.get(det.defId)?.slots.find((x) => x.id === slot.id)?.role;
+  if (was) return `${roleLabel(slot.role)} (for ${roleLabel(was)}${n ? ` ${n}` : ''})`;
   return `${roleLabel(slot.role)}${n ? ` ${n}` : ''}`;
 }
 

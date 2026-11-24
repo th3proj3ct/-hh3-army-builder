@@ -533,6 +533,10 @@ export const ASTARTES_PRIMARY_DETACHMENTS: DetachmentDef[] = [
     ...NO_SLOT_PRIMES,
     allowedDetachments: ['first-strike', 'combat-pioneer', 'lord-of-war'],
     warnUnlessTags: ['Antigrav', 'Flyer'],
+    slotExchanges: [
+      { faction: 'White Scars', from: 'Retinue', to: 'Elites', unitIds: ['golden-keshig'] },
+      { faction: 'White Scars', from: 'FastAttack', to: 'Support', unitIds: ['kyzagan-assault-speeder'] },
+    ],
   }),
   altPrimary('armoured-spearhead', 'Armoured Spearhead', [
     'HighCommand',

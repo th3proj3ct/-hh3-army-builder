@@ -4,6 +4,7 @@
  */
 import { CATALOG, FACTIONS, LEGIONS, armyListOf } from '../../src/catalog';
 import type { Allegiance, BattlefieldRole, DetachmentDef, DetachmentInstance, Roster, SlotDef, UnitInstance } from '../../src/model';
+import { chartSlots } from '../../src/validate';
 
 export interface BuilderState {
   roster: Roster;
@@ -41,7 +42,7 @@ export function emptyState(legion = 'Death Guard', pointsLimit = 3000, allegianc
 // ── lookups ───────────────────────────────────────────────────────────────
 export function slotsOf(det: DetachmentInstance): SlotDef[] {
   const def = detDefs.get(det.defId);
-  const base = def?.slots ?? [];
+  const base = def ? chartSlots(det, def) : [];
   return [...base, ...det.extraSlots.map((x) => ({ id: x.id, role: x.role })), ...(det.benefitSlots ?? []).map((x) => ({ id: x.id, role: x.role }))];
 }
 
@@ -364,7 +365,7 @@ export function setPrimaryDetachment(s: BuilderState, newDefId: string): { state
     roster: {
       ...s.roster,
       detachments: s.roster.detachments.map((d) => {
-        if (d.id === primary.id) return { ...d, defId: newDefId, fills, extraSlots: [], benefitSlots: [] };
+        if (d.id === primary.id) return { ...d, defId: newDefId, fills, extraSlots: [], benefitSlots: [], slotExchanges: undefined };
         const link = d.unlockedBy?.detachmentId === primary.id ? moved.get(d.unlockedBy.slotId) : undefined;
         return link ? { ...d, unlockedBy: { detachmentId: primary.id, slotId: link } } : d;
       }),
@@ -374,6 +375,29 @@ export function setPrimaryDetachment(s: BuilderState, newDefId: string): { state
   for (const d of next.roster.detachments.filter((x) => x.unlockedBy?.detachmentId === primary.id && !newDef.slots.some((sl) => sl.id === x.unlockedBy!.slotId)))
     next = removeDetachment(next, d.id);
   return { state: next, dropped };
+}
+
+/**
+ * Exchange a chart slot for another role (Sky-Hunter Phalanx, White Scars: Retinue → Golden
+ * Keshig Elites, Fast Attack → Kyzagan Support), or undo it with `to` undefined. The slot's unit,
+ * if any, is removed (it no longer fits).
+ */
+export function exchangeSlot(s: BuilderState, detId: string, slotId: string, to: BattlefieldRole | undefined): BuilderState {
+  const cleared = removeUnit(s, detId, slotId);
+  return mapDet(cleared, detId, (d) => {
+    const swaps = { ...(d.slotExchanges ?? {}) };
+    if (to) swaps[slotId] = to;
+    else delete swaps[slotId];
+    const { slotExchanges: _old, ...rest } = d;
+    return Object.keys(swaps).length ? { ...rest, slotExchanges: swaps } : rest;
+  });
+}
+/** Exchanges this slot could make now (its role and the detachment's Faction allow it). */
+export function exchangesFor(s: BuilderState, det: DetachmentInstance, slotId: string) {
+  const def = detDefs.get(det.defId);
+  const base = def?.slots.find((x) => x.id === slotId);
+  if (!def || !base) return [];
+  return (def.primaryRules?.slotExchanges ?? []).filter((x) => x.from === base.role && factionForDetachment(s, det.id) === x.faction);
 }
 
 /** Add one slot from the detachment's own benefit (Pride of the Legion: Heavy Transport…). */

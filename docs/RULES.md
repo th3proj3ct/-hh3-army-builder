@@ -107,9 +107,11 @@ From the Warhammer Community PDF "Legiones Astartes Primary Detachments" (Nov 20
 | Armoured Spearhead | HC; Command ×3, Transport; Armour ×10 (no Prime slots) | Non-Vehicles need Battlesmith; no Move 0/"-" units; Decurion Magna tanks may fill HC, other Decurion tanks Command (the builder adds the upgrade when you place one); other detachments only Armoured Support, Combat Pioneer, First Strike, Techmarine Covenant, Armoured Fist, Lord of War; no slot-adding Primes |
 | Orbital Drop Assault | HC; ★Command, Command, Retinue; ★Heavy Assault, Heavy Assault, ★Troops, Troops; ★Elites, Elites, Transport ×2 | Other detachments only Tactical Support, First Strike (max 1), Shock Assault, Heavy Support, Warlord, Lord of War; no slot-adding Primes; +1 Transport or Heavy Transport slot per non-Vehicle unit in the army |
 
+**Sky-Hunter Phalanx, White Scars:** any Retinue slot can be exchanged for an Elites slot (Golden Keshig only) and any Fast Attack slot for a Support slot (Kyzagan Assault Speeder only), from the unit picker. An exchanged slot is treated as plain, not Prime, since the text doesn't say it keeps Prime status. ⚠️
+
 **Ambiguous:** "Prime Advantages which add additional Battlefield Role Slots to a Detachment may not be selected" is applied to every detachment in the army (it's listed with the army-wide restrictions). ⚠️
 
-**Not enforced (in-game, not list-building):** Victory Points for destroyed Elites/Heavy Assault (Pride) or War-engine (Fury) units; Pride's Vanguard (X) → Line (1) swap; Squadron Tactics (Armoured Spearhead); Orbital Drop Protocols and the Orbital Drop Table. **Not done:** Sky-Hunter's White Scars slot exchanges (Retinue → Golden Keshig Elites, Fast Attack → Kyzagan Support); Ancient of War's "not Malefic" condition (Malefic isn't imported as a model type).
+**Not enforced (in-game, not list-building):** Victory Points for destroyed Elites/Heavy Assault (Pride) or War-engine (Fury) units; Pride's Vanguard (X) → Line (1) swap; Squadron Tactics (Armoured Spearhead); Orbital Drop Protocols and the Orbital Drop Table. **Not done:** Ancient of War's "not Malefic" condition (Malefic isn't imported as a model type).
 
 ## Legion Additional Detachments (14 Nov 2026)
 

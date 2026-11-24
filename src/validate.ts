@@ -35,9 +35,25 @@ const ROLE_LABEL: Record<BattlefieldRole, string> = {
 };
 export const roleLabel = (r: BattlefieldRole) => ROLE_LABEL[r];
 const article = (r: BattlefieldRole) => (/^[AEIOU]/.test(ROLE_LABEL[r]) ? 'an' : 'a');
+/**
+ * A detachment's chart slots after any slot exchanges (Sky-Hunter Phalanx, White Scars: Retinue →
+ * Elites for Golden Keshig). An exchanged slot takes the new role and unit restriction and is no
+ * longer Prime ("exchanged for one Elites Slot"). Exchanges the detachment doesn't offer are left
+ * as they were; the validator reports them.
+ */
+export function chartSlots(det: DetachmentInstance, def: DetachmentDef): SlotDef[] {
+  const swaps = det.slotExchanges;
+  if (!swaps) return def.slots;
+  return def.slots.map((s) => {
+    const to = swaps[s.id];
+    const ex = to && def.primaryRules?.slotExchanges?.find((x) => x.from === s.role && x.to === to);
+    if (!ex) return s;
+    return { id: s.id, role: ex.to, restriction: { unitIds: ex.unitIds, source: def.source } };
+  });
+}
 /** Battlefield Role of a slot in a detachment: a chart slot, a Prime-added slot or a benefit slot. */
 const slotRoleOf = (det: DetachmentInstance, def: DetachmentDef, slotId: string): BattlefieldRole | undefined =>
-  def.slots.find((s) => s.id === slotId)?.role ?? det.extraSlots.find((x) => x.id === slotId)?.role ?? det.benefitSlots?.find((x) => x.id === slotId)?.role;
+  chartSlots(det, def).find((s) => s.id === slotId)?.role ?? det.extraSlots.find((x) => x.id === slotId)?.role ?? det.benefitSlots?.find((x) => x.id === slotId)?.role;
 
 interface ResolvedUnit {
   inst: UnitInstance;
@@ -124,7 +140,12 @@ export function validate(roster: Roster, catalog: Catalog): ValidationResult {
     if (def.armyLists && !def.armyLists.includes(det.armyList))
       err('DET-ARMY-LIST', `${def.name} is only for the ${def.armyLists.map((l) => listDefs.get(l)?.name ?? l).join('/')} list, not ${listDefs.get(det.armyList)?.name ?? det.armyList}`, at);
 
-    const slotById = new Map<string, SlotDef>(def.slots.map((s) => [s.id, s]));
+    const slotById = new Map<string, SlotDef>(chartSlots(det, def).map((s) => [s.id, s]));
+    for (const [slotId, to] of Object.entries(det.slotExchanges ?? {})) {
+      const from = def.slots.find((s) => s.id === slotId)?.role;
+      if (!from || !def.primaryRules?.slotExchanges?.some((x) => x.from === from && x.to === to))
+        err('PRIMARY-SLOT-EXCHANGE', `${def.name} can't exchange ${from ? `${article(from)} ${roleLabel(from)}` : 'this'} slot for ${article(to)} ${roleLabel(to)} slot`, { ...at, slotId });
+    }
     const fillBySlot = new Map<string, SlotFill>();
     for (const f of det.fills) {
       if (fillBySlot.has(f.slotId)) err('SLOT-ONE-UNIT', `Two units were placed in the same slot (${f.slotId}) of ${def.name}`, { ...at, slotId: f.slotId });
@@ -350,6 +371,13 @@ export function validate(roster: Roster, catalog: Catalog): ValidationResult {
       }
       for (const [id, max] of Object.entries(pr.maxOf ?? {}))
         if ((counts.get(id) ?? 0) > max) err('PRIMARY-ALLOWED-DETACHMENTS', `${who} allows at most ${max} ${detDefs.get(id)?.name ?? id}`, pat);
+    }
+    // Slot exchanges only for their Faction ("If this Detachment is from the White Scars Faction").
+    for (const [slotId, to] of Object.entries(primaryDet.slotExchanges ?? {})) {
+      const ex = pr.slotExchanges?.find((x) => x.to === to);
+      const factions = new Set(resolved.filter((r) => r.det === primaryDet && r.faction).map((r) => r.faction!));
+      if (ex && (factions.size !== 1 || !factions.has(ex.faction)))
+        err('PRIMARY-SLOT-EXCHANGE', `${who} only exchanges slots for ${roleLabel(to)} slots when it's from the ${ex.faction} Faction`, { ...pat, slotId });
     }
     // "Lord of War (may only be used to select Models with the Transport Sub-Type)".
     if (pr.lordOfWarModelTag)

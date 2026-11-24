@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { CATALOG } from '../src/catalog';
 import type { DetachmentInstance, Roster, UnitInstance } from '../src/model';
 import { validate } from '../src/validate';
-import { addBenefitSlot, benefitAllowance, emptyState, placeUnit, setPrimaryDetachment } from '../ui/src/state';
+import { addBenefitSlot, benefitAllowance, emptyState, exchangeSlot, exchangesFor, placeUnit, setPrimaryDetachment, slotsOf } from '../ui/src/state';
 import { deathGuardSample } from '../ui/src/samples';
 
 let seq = 0;
@@ -147,5 +147,36 @@ describe('switching the Primary Detachment type', () => {
     const back = setPrimaryDetachment(filled, 'crusade-primary');
     expect(back.dropped).toEqual([]);
     expect(back.state.roster.detachments[0]!.fills[0]!.slotId).toBe('crusade-primary.Command1');
+  });
+});
+
+describe('Sky-Hunter Phalanx: White Scars slot exchanges', () => {
+  const ws = (fills: Record<string, Fill>, swaps: Record<string, 'Elites' | 'Support'>) => {
+    const d = det('p', 'sky-hunter-phalanx', fills, { slotExchanges: Object.fromEntries(Object.entries(swaps).map(([k, v]) => [`sky-hunter-phalanx.${k}`, v])) });
+    for (const f of d.fills) if (f.unit && byId.get(f.unit.unitId)?.factionTrait === null) f.unit.factionTrait = 'White Scars';
+    return { ...army(d), ritesOfWar: { 'White Scars': 'white-scars-legiones-astartes' } };
+  };
+  it('a Retinue slot exchanged for Elites takes Golden Keshig', () =>
+    expect(ids(ws({ Command1: 'centurion', Retinue1: 'golden-keshig' }, { Retinue1: 'Elites' }))).toEqual([]));
+  it('a Fast Attack slot exchanged for Support takes a Kyzagan Assault Speeder, and nothing else', () => {
+    expect(ids(ws({ Command1: 'centurion', FastAttack2: 'kyzagan-assault-speeder' }, { FastAttack2: 'Support' }))).toEqual([]);
+    expect(ids(ws({ Command1: 'centurion', FastAttack2: 'techmarine' }, { FastAttack2: 'Support' }))).toContain('SLOT-RESTRICTION');
+  });
+  it("only for White Scars, and only the exchanges the detachment offers", () => {
+    const dg = army(det('p', 'sky-hunter-phalanx', { Command1: 'centurion' }, { slotExchanges: { 'sky-hunter-phalanx.Retinue1': 'Elites' } }));
+    expect(ids(dg)).toContain('PRIMARY-SLOT-EXCHANGE');
+    expect(ids(ws({ Command1: 'centurion' }, { Command2: 'Elites' } as never))).toContain('PRIMARY-SLOT-EXCHANGE');
+  });
+  it('the builder offers the exchange only to White Scars, and an exchanged Prime slot is no longer Prime', () => {
+    let s = setPrimaryDetachment(emptyState('White Scars'), 'sky-hunter-phalanx').state;
+    const d = () => s.roster.detachments[0]!;
+    expect(exchangesFor(s, d(), 'sky-hunter-phalanx.FastAttack1').map((x) => x.to)).toEqual(['Support']);
+    s = exchangeSlot(s, 'primary', 'sky-hunter-phalanx.FastAttack1', 'Support');
+    const slot = slotsOf(d()).find((x) => x.id === 'sky-hunter-phalanx.FastAttack1')!;
+    expect([slot.role, !!slot.prime]).toEqual(['Support', false]);
+    s = exchangeSlot(s, 'primary', 'sky-hunter-phalanx.FastAttack1', undefined);
+    expect(d().slotExchanges).toBeUndefined();
+    const dg = setPrimaryDetachment(emptyState('Death Guard'), 'sky-hunter-phalanx').state;
+    expect(exchangesFor(dg, dg.roster.detachments[0]!, 'sky-hunter-phalanx.Retinue1')).toEqual([]);
   });
 });

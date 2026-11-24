@@ -1,7 +1,7 @@
 /** Special-rule hover text: every rule a weapon or unit names should find its BSData text. */
 import { describe, expect, it } from 'vitest';
 import data from '../data/bsdata/datasheets.json';
-import { lookupRule, splitRules, type Datasheet, type Glossary } from '../ui/src/loadout';
+import { itemInfo, itemKey, lookupRule, splitRules, type Datasheet, type Glossary } from '../ui/src/loadout';
 
 const file = data as unknown as { glossary: Glossary; datasheets: Record<string, Datasheet> };
 const g = file.glossary;
@@ -27,4 +27,17 @@ describe('special-rules glossary', () => {
     const missing = [...names].filter((n) => !lookupRule(g, n));
     expect(missing.length).toBeLessThanOrEqual(5);
   });
+});
+
+describe('wargear text', () => {
+  const w = (data as unknown as { wargear: import('../ui/src/loadout').WargearText }).wargear;
+  it('non-weapon wargear has its rule text (Cyber-familiar, Augury scanner)', () => {
+    expect(itemInfo(file.datasheets['forge-lord'], w, 'Cyber-familiar').text?.text).toMatch(/Intelligence Checks/);
+    expect(w[itemKey('Augury scanner')]?.summary).toMatch(/Shrouded/);
+  });
+  it('weapons resolve to their profiles', () => {
+    const info = itemInfo(file.datasheets['forge-lord'], w, 'Thunder hammer');
+    expect(info.weapons.map((x) => x.name)).toContain('Thunder hammer');
+  });
+  it("itemKey keeps the letter s (a regex once dropped it)", () => expect(itemKey('Augury  Scanners')).toBe('augury scanners'));
 });

@@ -6,6 +6,7 @@ import { roleLabel } from '../../src/validate';
 import { detachmentsFor, howAvailable } from './fits';
 import { unitDefs } from './state';
 import { RoleIcon } from './RoleIcon';
+import { ItemInfo } from './ItemInfo';
 
 
 
@@ -92,6 +93,38 @@ function RulePopup({ tip, keep, hide }: { tip: Tip; keep: () => void; hide: () =
       {tip.x && <span className="rule-x"> · X = {tip.x}</span>}
       <p>{tip.text}</p>
     </div>
+  );
+}
+
+/** One model's wargear: each item with an eye button that opens what it does underneath. */
+function WargearLine({ unitId, label, items }: { unitId: string; label: string; items: string[] }) {
+  const [open, setOpen] = useState<string[]>([]);
+  const toggle = (it: string) => setOpen((o) => (o.includes(it) ? o.filter((x) => x !== it) : [...o, it]));
+  if (!items.length) return <li><strong>{label}:</strong> —</li>;
+  return (
+    <li className="wargear-line">
+      <strong>{label}:</strong>{' '}
+      {items.map((it, i) => {
+        const name = it.replace(/^\d+× /, ''); // "2× Bolter" → look up "Bolter"
+        return (
+          <span key={it} className="wargear-item">
+            {i ? ', ' : ''}
+            {it}
+            <button type="button" className={`eye mini ${open.includes(name) ? 'on' : ''}`} aria-expanded={open.includes(name)} aria-label={`What ${name} does`} title={`What ${name} does`} onClick={() => toggle(name)}>
+              <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true">
+                <path d="M12 5c-5 0-9 4.5-10 7 1 2.5 5 7 10 7s9-4.5 10-7c-1-2.5-5-7-10-7zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm0-6a2 2 0 1 0 0 4 2 2 0 0 0 0-4z" fill="currentColor" />
+              </svg>
+            </button>
+          </span>
+        );
+      })}
+      {open.map((name) => (
+        <div key={name} className="wargear-open">
+          <strong className="wargear-open-name">{name}</strong>
+          <ItemInfo unitId={unitId} item={name} />
+        </div>
+      ))}
+    </li>
   );
 }
 
@@ -225,9 +258,7 @@ function DatasheetDialog({ req, onClose }: { req: DatasheetRequest; onClose: () 
                 <h3>Wargear as built</h3>
                 <ul className="plain">
                   {loadout.lines.map((l) => (
-                    <li key={l.model}>
-                      <strong>{l.model}{l.count > 1 ? ` ×${l.count}` : ''}:</strong> {l.items.join(', ') || '—'}
-                    </li>
+                    <WargearLine key={l.model} unitId={def.id} label={`${l.model}${l.count > 1 ? ` ×${l.count}` : ''}`} items={l.items} />
                   ))}
                 </ul>
               </section>
@@ -237,7 +268,7 @@ function DatasheetDialog({ req, onClose }: { req: DatasheetRequest; onClose: () 
                 <h3>Wargear</h3>
                 <ul className="plain">
                   {sheet.wargear.filter((w) => w.items.length).map((w) => (
-                    <li key={w.model}><strong>{w.model}:</strong> {w.items.join(', ')}</li>
+                    <WargearLine key={w.model} unitId={def.id} label={w.model} items={w.items} />
                   ))}
                 </ul>
               </section>

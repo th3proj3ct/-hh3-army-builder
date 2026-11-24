@@ -474,3 +474,10 @@ button.primary:hover { filter: brightness(1.08); }
 .item-rules { margin: 6px 0 0; }
 .item-rules li { margin: 2px 0; }
 .item-text { margin: 4px 0 0; }
+
+/* Datasheet wargear lists: a small eye after each item, its details opening underneath. */
+.wargear-item { white-space: nowrap; }
+.eye.mini { padding: 1px 3px; margin-left: 3px; vertical-align: -2px; line-height: 1; }
+.wargear-open { margin: 6px 0 2px; }
+.wargear-open-name { font-size: 13px; }
+.wargear-open .item-info { margin-left: 0; }

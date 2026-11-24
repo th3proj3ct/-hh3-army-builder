@@ -9,7 +9,9 @@ import { detachmentReasons, splitMessage } from './reasons';
 import { forArmyList, forPrimaryLegion } from './fits';
 import {
   FACTIONS,
+  addBenefitSlot,
   addDetachment,
+  benefitAllowance,
   canUnlock,
   childrenOf,
   detDefs,
@@ -17,6 +19,7 @@ import {
   primeDefs,
   removeDetachment,
   setAlliedFaction,
+  setPrimaryDetachment,
   setChoice,
   slotsOf,
   unitDefs,
@@ -39,6 +42,7 @@ interface Props {
 
 export function slotLabel(det: DetachmentInstance, slot: SlotDef): string {
   const extra = det.extraSlots.find((x) => x.id === slot.id);
+  if (det.benefitSlots?.some((x) => x.id === slot.id)) return `${roleLabel(slot.role)} (extra, ${detDefs.get(det.defId)?.name ?? 'benefit'})`;
   if (extra) return `${roleLabel(slot.role)} (extra, ${primeDefs.get(extra.grantedBy.primeAdvantageId)?.name ?? 'Prime'})`;
   const n = /(\d+)$/.exec(slot.id)?.[1];
   return `${roleLabel(slot.role)}${n ? ` ${n}` : ''}`;
@@ -118,6 +122,25 @@ function DetachmentCard({ det, depth, props }: { det: DetachmentInstance; depth:
               </select>
             </label>
           )}
+          {def.kind === 'Primary' && det.armyList === 'legiones-astartes' && (
+            <label title="Legiones Astartes armies may use one of these in place of the Crusade Primary Detachment">
+              Type{' '}
+              <select
+                value={det.defId}
+                onChange={(e) => {
+                  const r = setPrimaryDetachment(state, e.target.value);
+                  const name = detDefs.get(e.target.value)?.name;
+                  commit(r.state, `Primary Detachment set to ${name}${r.dropped.length ? `; no slot for: ${r.dropped.join(', ')}` : ''}`);
+                }}
+              >
+                {CATALOG.detachments
+                  .filter((d) => d.kind === 'Primary' && (!d.armyLists || d.armyLists.includes(det.armyList)))
+                  .map((d) => (
+                    <option key={d.id} value={d.id}>{d.name}</option>
+                  ))}
+              </select>
+            </label>
+          )}
           {def.choice && (
             <label>
               {def.choice.label}{' '}
@@ -145,6 +168,26 @@ function DetachmentCard({ det, depth, props }: { det: DetachmentInstance; depth:
           <SlotChip key={s.id} det={det} slot={s} props={props} />
         ))}
       </div>
+      {(() => {
+        // Benefit slots (Pride of the Legion: a Heavy Transport per filled Retinue/Heavy Assault/Elites slot…).
+        const xs = def.primaryRules?.extraSlots;
+        const room = xs && benefitAllowance(state, det);
+        if (!xs || !room) return null;
+        const per = xs.perFilledRoles ? `filled ${xs.perFilledRoles.map(roleLabel).join('/')} slot` : 'non-Vehicle unit in the army';
+        return (
+          <div className="benefit-slots">
+            <span className="hint">
+              {def.name}: one extra {xs.roles.map(roleLabel).join(' or ')} slot per {per} · {room.used} of {room.allowed} added
+            </span>
+            {room.used < room.allowed &&
+              xs.roles.map((r) => (
+                <button key={r} className="ghost" onClick={() => commit(addBenefitSlot(state, det.id, r), `Added an extra ${roleLabel(r)} slot to ${def.name}`)}>
+                  + Add {roleLabel(r)} slot
+                </button>
+              ))}
+          </div>
+        );
+      })()}
       {unlockers.length > 0 && (
         <div className="unlocks">
           {unlockers.map((s) => {

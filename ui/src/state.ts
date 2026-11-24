@@ -42,7 +42,19 @@ export function emptyState(legion = 'Death Guard', pointsLimit = 3000, allegianc
 export function slotsOf(det: DetachmentInstance): SlotDef[] {
   const def = detDefs.get(det.defId);
   const base = def?.slots ?? [];
-  return [...base, ...det.extraSlots.map((x) => ({ id: x.id, role: x.role }))];
+  return [...base, ...det.extraSlots.map((x) => ({ id: x.id, role: x.role })), ...(det.benefitSlots ?? []).map((x) => ({ id: x.id, role: x.role }))];
+}
+
+/**
+ * Armoured Spearhead: the Decurion upgrade that lets this vehicle sit in a High Command
+ * (Decurion Magna) or Command (any other Decurion) slot, if the detachment allows it.
+ */
+export function decurionFor(det: DetachmentInstance, slot: SlotDef, unitId: string): string | undefined {
+  if (!detDefs.get(det.defId)?.primaryRules?.decurionCommand) return undefined;
+  const opts = unitDefs.get(unitId)?.options.filter((o) => /--decurion-/.test(o.id)) ?? [];
+  if (slot.role === 'HighCommand') return opts.find((o) => o.id.endsWith('--decurion-magna'))?.id;
+  if (slot.role === 'Command') return opts.find((o) => !o.id.endsWith('--decurion-magna'))?.id;
+  return undefined;
 }
 export const fillOf = (det: DetachmentInstance, slotId: string) => det.fills.find((f) => f.slotId === slotId);
 export const childrenOf = (r: Roster, detId: string, slotId: string) =>
@@ -150,6 +162,11 @@ export function placeUnit(s: BuilderState, detId: string, slotId: string, unitId
     ...(def.factionTrait === null ? { factionTrait: factionForDetachment(s, detId) } : {}),
     ...(def.subFactions ? { subFaction: subFactionForDetachment(s, detId, def.subFactions) } : {}),
   };
+  // A Decurion tank placed in a command slot (Armoured Spearhead) takes the upgrade that allows it.
+  const det = s.roster.detachments.find((d) => d.id === detId);
+  const slot = det && slotsOf(det).find((x) => x.id === slotId);
+  const decurion = det && slot && def.role !== slot.role ? decurionFor(det, slot, unitId) : undefined;
+  if (decurion) unit.options = [{ optionId: decurion, count: 1 }];
   return mapDet(s, detId, (d) => {
     const existing = fillOf(d, slotId);
     const fills = existing ? d.fills.map((f) => (f.slotId === slotId ? { ...f, unit } : f)) : [...d.fills, { slotId, unit }];
@@ -309,6 +326,77 @@ export function planWithSubFaction(
   if (!unit || !def || !req.unitIds.includes(def.id) || !def.subFactions?.includes(req.subFaction) || unit.subFaction === req.subFaction) return null;
   const added = addDetachment(setSubFaction(s, link.detachmentId, link.slotId, req.subFaction), defId, link);
   return { state: added.state, unitId: def.id, subFaction: req.subFaction, newDetId: added.id };
+}
+
+/**
+ * Switch the Primary Detachment to another type (Crusade, Pride of the Legion…). Units move to
+ * the first free slot of their role in the new chart (Prime slots keep their Prime Advantage);
+ * units with no matching slot are dropped, along with anything their slot unlocked.
+ */
+export function setPrimaryDetachment(s: BuilderState, newDefId: string): { state: BuilderState; dropped: string[] } {
+  const primary = s.roster.detachments.find((d) => detDefs.get(d.defId)?.kind === 'Primary');
+  const newDef = detDefs.get(newDefId);
+  if (!primary || !newDef || primary.defId === newDefId) return { state: s, dropped: [] };
+  const free = [...newDef.slots];
+  const moved = new Map<string, string>(); // old slot id → new slot id
+  const fills: DetachmentInstance['fills'] = [];
+  const dropped: string[] = [];
+  const oldSlots = slotsOf(primary);
+  // Prime slots first, so a Prime unit keeps a Prime slot where the new chart has one.
+  const order = [...primary.fills].filter((f) => f.unit).sort((a, b) => Number(!!b.primeAdvantage) - Number(!!a.primeAdvantage));
+  for (const f of order) {
+    const old = oldSlots.find((x) => x.id === f.slotId);
+    const role = old?.role;
+    // Same kind of slot where possible: a Prime slot for a unit that was in one.
+    const pick = free.find((x) => x.role === role && !!x.prime === !!old?.prime) ?? free.find((x) => x.role === role);
+    if (!pick) {
+      dropped.push(unitDefs.get(f.unit!.unitId)?.name ?? f.unit!.unitId);
+      continue;
+    }
+    free.splice(free.indexOf(pick), 1);
+    moved.set(f.slotId, pick.id);
+    // Slot-adding Prime Advantages are dropped: their extra slot doesn't carry over.
+    const keepPrime = f.primeAdvantage && pick.prime && primeDefs.get(f.primeAdvantage)?.effect.kind !== 'addSlot';
+    fills.push({ slotId: pick.id, unit: f.unit!, ...(keepPrime ? { primeAdvantage: f.primeAdvantage } : {}) });
+  }
+  let next: BuilderState = {
+    ...s,
+    roster: {
+      ...s.roster,
+      detachments: s.roster.detachments.map((d) => {
+        if (d.id === primary.id) return { ...d, defId: newDefId, fills, extraSlots: [], benefitSlots: [] };
+        const link = d.unlockedBy?.detachmentId === primary.id ? moved.get(d.unlockedBy.slotId) : undefined;
+        return link ? { ...d, unlockedBy: { detachmentId: primary.id, slotId: link } } : d;
+      }),
+    },
+  };
+  // Detachments unlocked from a slot that's gone go too.
+  for (const d of next.roster.detachments.filter((x) => x.unlockedBy?.detachmentId === primary.id && !newDef.slots.some((sl) => sl.id === x.unlockedBy!.slotId)))
+    next = removeDetachment(next, d.id);
+  return { state: next, dropped };
+}
+
+/** Add one slot from the detachment's own benefit (Pride of the Legion: Heavy Transport…). */
+export function addBenefitSlot(s: BuilderState, detId: string, role: BattlefieldRole): BuilderState {
+  return mapDet(s, detId, (d) => ({ ...d, benefitSlots: [...(d.benefitSlots ?? []), { id: `b-${newId('slot')}`, role }] }));
+}
+/** Remove a benefit slot (and the unit in it). */
+export function removeBenefitSlot(s: BuilderState, detId: string, slotId: string): BuilderState {
+  const cleared = removeUnit(s, detId, slotId);
+  return mapDet(cleared, detId, (d) => ({ ...d, benefitSlots: (d.benefitSlots ?? []).filter((x) => x.id !== slotId) }));
+}
+/** How many benefit slots this detachment may have right now, and how many it has. */
+export function benefitAllowance(s: BuilderState, det: DetachmentInstance): { allowed: number; used: number } | null {
+  const xs = detDefs.get(det.defId)?.primaryRules?.extraSlots;
+  if (!xs) return null;
+  const used = det.benefitSlots?.length ?? 0;
+  if (xs.perFilledRoles) {
+    const roles = slotsOf(det);
+    const allowed = det.fills.filter((f) => f.unit && xs.perFilledRoles!.includes(roles.find((r) => r.id === f.slotId)?.role as BattlefieldRole)).length;
+    return { allowed, used };
+  }
+  const units = s.roster.detachments.flatMap((d) => d.fills.map((f) => f.unit).filter(Boolean)) as UnitInstance[];
+  return { allowed: units.filter((u) => !unitDefs.get(u.unitId)?.modelTags.includes('Vehicle')).length, used };
 }
 
 export function removeDetachment(s: BuilderState, detId: string): BuilderState {

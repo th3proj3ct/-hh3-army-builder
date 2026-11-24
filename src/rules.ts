@@ -17,6 +17,7 @@ export const AOD: SourceRef = { book: 'Age of Darkness Rulebook', version: '1.2'
 const aod = (section: string): SourceRef => ({ ...AOD, section });
 const faq = (section: string): SourceRef => ({ book: 'Age of Darkness Rulebook FAQ', section, faq: true });
 const astartes = (section: string): SourceRef => ({ book: 'Liber Astartes / Liber Hereticus', version: '1.1', section });
+const lapd = (section: string): SourceRef => ({ book: 'Legiones Astartes Primary Detachments (Warhammer Community)', version: 'Nov 2026', section });
 const mech = (section: string): SourceRef => ({ book: 'Liber Mechanicum (via BSData horus-heresy-3rd-edition)', section });
 
 export type RuleStatus = 'confirmed' | 'ambiguous' | 'unconfirmed';
@@ -73,6 +74,13 @@ export const RULES = Object.fromEntries(
     r('DET-UNLOCK-ONE', 'Each Command/High Command slot unlocks one detachment (Officer of the Line (X) in a Command slot: X Auxiliaries; Tank Commander (X): X Armour-only Auxiliaries)', aod('Detachment Types › Primary Detachments; Special Rules › Officer of the Line (X), Tank Commander (X)')),
     r('ARMY-CONSUL-ONE', 'An army may include only one model with Consul-Delegatus (which lets a Command slot unlock an Apex)', aod('Special Rules › Consul-Delegatus')),
     r('DET-MAX-ONCE', 'This detachment may be taken only once per army', aod('Special Rules › Tip of the Spear')),
+    // ── Legiones Astartes Primary Detachments (Warhammer Community, Nov 2026) ──
+    r('PRIMARY-ALLOWED-DETACHMENTS', 'An alternative Primary Detachment allows only certain other detachments', lapd('Restrictions')),
+    r('PRIMARY-NO-SLOT-PRIMES', 'With most alternative Primary Detachments, Prime Advantages that add slots may not be taken', lapd('Restrictions'), 'ambiguous',
+      'Applied to every detachment in the army, since the restriction is listed with the army-wide ones; it could be read as the Primary Detachment only.'),
+    r('PRIMARY-UNIT-LIMITS', 'An alternative Primary Detachment limits which units the army may include', lapd('Restrictions')),
+    r('PRIMARY-EXTRA-SLOTS', 'Extra slots from a Primary Detachment benefit are limited by what the army includes', lapd('Benefits')),
+    r('PRIMARY-DEPLOYMENT', 'Some units in this army can\'t deploy with its Primary Detachment (advisory)', lapd('Sky-Hunter Phalanx')),
     r('DET-UNLOCK-SOURCE', 'Only Primary, Apex and Allied detachments can unlock further detachments', aod('Detachment Types › Primary / Apex / Allied Detachments'), 'ambiguous',
       'The FOC summary says slots filled "in any Detachment" count, but the per-type text only grants unlocks to Primary, Apex and Allied. No core Auxiliary has Command slots, so this only matters for future detachments.'),
     r('DET-UNLOCK-ALLIED', 'An Allied detachment can only unlock Auxiliary detachments, linked to that Allied detachment', aod('Detachment Types › Allied Detachments')),

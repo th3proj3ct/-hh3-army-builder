@@ -438,3 +438,28 @@ dl.rules dd { margin: 0; color: var(--muted); font-size: 13px; }
 .opt-group > summary { font-size: 13px; }
 .opt-group-title { color: var(--text); font-weight: 600; text-transform: capitalize; }
 .opt-group-count { color: var(--muted); }
+
+/* Export pop-up: a wide box of monospaced roster text. */
+dialog.export { width: min(860px, calc(100vw - 32px)); }
+.export-text {
+  width: 100%; box-sizing: border-box; min-height: 320px; resize: vertical; margin: 6px 0 10px;
+  font: 13px/1.45 ui-monospace, SFMono-Regular, Consolas, monospace; white-space: pre-wrap; overflow: auto;
+  background: var(--surface-2); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 10px;
+}
+button.primary { background: var(--accent); color: var(--surface); border-color: var(--accent); font-weight: 600; }
+button.primary:hover { filter: brightness(1.08); }
+
+/* Special-rule names with hover text, and the pop-up that shows it. */
+.rule-tip { text-decoration: underline dotted; text-underline-offset: 3px; cursor: help; }
+.rule-tip:hover, .rule-tip:focus-visible { color: var(--accent); outline: none; }
+.rule-pop {
+  position: fixed; z-index: 100; overflow: auto; padding: 10px 12px; font-size: 13px; line-height: 1.45;
+  background: var(--surface); color: var(--text); border: 1px solid var(--accent); border-radius: 8px;
+  box-shadow: 0 6px 24px rgb(0 0 0 / 0.35);
+}
+.rule-pop p { margin: 6px 0 0; white-space: normal; }
+.rule-pop .rule-x { color: var(--muted); }
+
+/* Extra slots from an alternative Primary Detachment's benefit. */
+.benefit-slots { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
+.benefit-slots .hint { margin: 0; flex-basis: 100%; }

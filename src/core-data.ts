@@ -479,6 +479,107 @@ export const CORE_PRIME_ADVANTAGES: PrimeAdvantageDef[] = [
   },
 ];
 
+/**
+ * Legiones Astartes Primary Detachments: "If the Legiones Astartes Army List is selected for an
+ * Army's Primary Detachment, one of [these] may be used in place of the Crusade Primary
+ * Detachment." Warhammer Community PDF, Nov 2026. Layouts read from its slot charts; the
+ * restrictions are paraphrased into PrimaryRules. In-game rules (Victory Points for destroyed
+ * units, Squadron Tactics, Orbital Drop Protocols…) aren't list-building and are in RULES.md.
+ */
+const wc = (section: string): SourceRef => ({ book: 'Legiones Astartes Primary Detachments (Warhammer Community)', version: 'Nov 2026', section });
+const altPrimary = (id: string, name: string, spec: string[], primaryRules: DetachmentDef['primaryRules']): DetachmentDef => ({
+  id,
+  name,
+  kind: 'Primary',
+  slots: slots(id, spec),
+  armyListRule: 'primary',
+  armyLists: ['legiones-astartes'],
+  requirements: [],
+  grantsUnlocks: true,
+  primaryRules,
+  source: wc(name),
+});
+const NO_SLOT_PRIMES = { noSlotAddingPrimes: {} };
+export const ASTARTES_PRIMARY_DETACHMENTS: DetachmentDef[] = [
+  altPrimary('pride-of-the-legion', 'Pride of the Legion', [
+    'HighCommand',
+    'Command*', 'Command', 'Retinue', 'Retinue', 'Retinue',
+    'HeavyAssault*', 'HeavyAssault', 'HeavyAssault', 'HeavyAssault', 'HeavyAssault',
+    'Elites*', 'Elites', 'Elites', 'Elites', 'Elites',
+  ], {
+    ...NO_SLOT_PRIMES,
+    armyNeedsRule: 'Master of the Legion',
+    allowedDetachments: ['officer-cadre', 'shock-assault', 'heavy-support', 'warlord', 'lord-of-war'],
+    lordOfWarModelTag: 'Transport',
+    extraSlots: { roles: ['HeavyTransport'], perFilledRoles: ['Retinue', 'HeavyAssault', 'Elites'] },
+  }),
+  altPrimary('fury-of-the-ancients', 'Fury of the Ancients', [
+    'HighCommand', 'Retinue',
+    'Command*', 'Command',
+    'WarEngine*', 'WarEngine', 'WarEngine', 'WarEngine', 'WarEngine',
+    'WarEngine*', 'WarEngine', 'WarEngine', 'WarEngine', 'WarEngine',
+  ], {
+    noSlotAddingPrimes: { exceptRoles: ['WarEngine'] },
+    unitsNeedRule: { ifTags: ['Command', 'Specialist'], rule: 'Battlesmith' },
+    allowedDetachments: ['techmarine-covenant', 'heavy-support', 'lord-of-war'],
+    lordOfWarModelTag: 'Transport',
+  }),
+  altPrimary('sky-hunter-phalanx', 'Sky-Hunter Phalanx', [
+    'HighCommand',
+    'Command*', 'Command', 'Retinue', 'Retinue',
+    'FastAttack*', 'FastAttack', 'FastAttack', 'FastAttack', 'FastAttack',
+    'FastAttack*', 'FastAttack', 'FastAttack', 'FastAttack', 'FastAttack',
+  ], {
+    ...NO_SLOT_PRIMES,
+    allowedDetachments: ['first-strike', 'combat-pioneer', 'lord-of-war'],
+    warnUnlessTags: ['Antigrav', 'Flyer'],
+  }),
+  altPrimary('armoured-spearhead', 'Armoured Spearhead', [
+    'HighCommand',
+    'Command', 'Command', 'Command', 'Transport',
+    'Armour', 'Armour', 'Armour', 'Armour', 'Armour',
+    'Armour', 'Armour', 'Armour', 'Armour', 'Armour',
+  ], {
+    ...NO_SLOT_PRIMES,
+    allowedDetachments: ['armoured-support', 'combat-pioneer', 'first-strike', 'techmarine-covenant', 'armoured-fist', 'lord-of-war'],
+    unitsNeedRule: { ifNotTags: ['Vehicle'], rule: 'Battlesmith' },
+    noImmobile: true,
+    decurionCommand: true,
+  }),
+  altPrimary('orbital-drop-assault', 'Orbital Drop Assault', [
+    'HighCommand',
+    'Command*', 'Command', 'Retinue',
+    'HeavyAssault*', 'HeavyAssault', 'Troops*', 'Troops',
+    'Elites*', 'Elites', 'Transport', 'Transport',
+  ], {
+    ...NO_SLOT_PRIMES,
+    allowedDetachments: ['tactical-support', 'first-strike', 'shock-assault', 'heavy-support', 'warlord', 'lord-of-war'],
+    maxOf: { 'first-strike': 1 },
+    extraSlots: { roles: ['Transport', 'HeavyTransport'], perNonVehicleUnit: true },
+  }),
+];
+export const ASTARTES_PRIMARY_PRIME_ADVANTAGES: PrimeAdvantageDef[] = [
+  {
+    id: 'ancient-of-war',
+    name: 'Ancient of War',
+    summary: 'Fury of the Ancients only. A Walker unit (not Malefic) gains Eternal Warrior (1).',
+    effect: { kind: 'modelBuff' },
+    allowedForUnique: false,
+    onlyInDetachments: ['fury-of-the-ancients'],
+    unitRequirement: { modelTags: ['Walker'] },
+    source: wc('Fury of the Ancients › Ancient of War'),
+  },
+  {
+    id: 'skilled-riders',
+    name: 'Skilled Riders',
+    summary: 'Sky-Hunter Phalanx only. Cavalry models in the unit gain Shrouded (6+) and Move Through Cover.',
+    effect: { kind: 'modelBuff' },
+    allowedForUnique: false,
+    onlyInDetachments: ['sky-hunter-phalanx'],
+    source: wc('Sky-Hunter Phalanx › Skilled Riders'),
+  },
+];
+
 export const ASTARTES_PRIME_ADVANTAGES: PrimeAdvantageDef[] = [
   {
     id: 'true-believers',

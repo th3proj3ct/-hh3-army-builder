@@ -213,7 +213,40 @@ export interface DetachmentDef {
   mixedFactions?: boolean;
   /** Only for these army lists (e.g. Legiones Astartes detachments). Absent = any list (core). */
   armyLists?: string[];
+  /** An alternative Primary Detachment's army-wide benefits and restrictions (Pride of the Legion…). */
+  primaryRules?: PrimaryRules;
   source: SourceRef;
+}
+
+/**
+ * Rules an alternative Primary Detachment imposes on the whole army ("Legiones Astartes Primary
+ * Detachments", Warhammer Community, Nov 2026). Only list-building rules; in-game ones are noted
+ * in RULES.md.
+ */
+export interface PrimaryRules {
+  /** "Only the following additional Detachments may be selected" (detachment ids). */
+  allowedDetachments?: string[];
+  /** Per-detachment caps within that list, e.g. First Strike (maximum of 1). */
+  maxOf?: Record<string, number>;
+  /** "Lord of War (may only be used to select Models with the Transport Sub-Type)". */
+  lordOfWarModelTag?: ModelTag;
+  /** "Prime Advantages which add additional Battlefield Role Slots may not be selected" (except these roles). */
+  noSlotAddingPrimes?: { exceptRoles?: BattlefieldRole[] };
+  /** The army must include a unit with this rule or trait (Pride: Master of the Legion). */
+  armyNeedsRule?: string;
+  /** Units with any of `ifTags` (or, with `ifNotTags`, units lacking all of them) need `rule`. */
+  unitsNeedRule?: { ifTags?: ModelTag[]; ifNotTags?: ModelTag[]; rule: string };
+  /** Units with a model whose Move is 0 or "-" may not be selected (Armoured Spearhead). */
+  noImmobile?: boolean;
+  /** Decurion Magna units may fill High Command slots here, other Decurion units Command slots. */
+  decurionCommand?: boolean;
+  /**
+   * Extra slots this detachment may add to itself: one of `roles` per filled slot of `perFilledRoles`
+   * here (Pride), or per non-Vehicle unit in the army (Orbital Drop Assault).
+   */
+  extraSlots?: { roles: BattlefieldRole[]; perFilledRoles?: BattlefieldRole[]; perNonVehicleUnit?: boolean };
+  /** Units without any of these tags can't deploy (Sky-Hunter Phalanx): a warning, not an error. */
+  warnUnlessTags?: ModelTag[];
 }
 
 // ─────────────────────────── catalog: prime advantages ───────────────────────
@@ -244,8 +277,12 @@ export interface PrimeAdvantageDef {
     factionTraits?: string[];
     armyLists?: string[];
     excludeModelTags?: ModelTag[];
+    /** The unit must include a model of one of these types (Ancient of War: Walker). */
+    modelTags?: ModelTag[];
   };
   allegiance?: Allegiance;
+  /** Only selectable in these detachments (Ancient of War: Fury of the Ancients). */
+  onlyInDetachments?: string[];
   source: SourceRef;
 }
 
@@ -338,6 +375,8 @@ export interface DetachmentInstance {
   /** Value for DetachmentDef.choice (e.g. 'Tartaros'). */
   choice?: string;
   extraSlots: ExtraSlot[];
+  /** Slots added by the detachment's own benefit (PrimaryRules.extraSlots), not by a Prime Advantage. */
+  benefitSlots?: { id: string; role: BattlefieldRole }[];
   fills: SlotFill[];
 }
 

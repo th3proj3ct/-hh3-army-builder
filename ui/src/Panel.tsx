@@ -15,6 +15,8 @@ import {
   duplicateTarget,
   duplicateUnit,
   planWithCommander,
+  decurionFor,
+  removeBenefitSlot,
   planWithSubFaction,
   unlockAllowance,
   unlockSummary,
@@ -70,7 +72,8 @@ function UnitPicker({ props, det, slot }: { props: Props; det: DetachmentInstanc
   const rows = useMemo(() => {
     const roles: BattlefieldRole[] = special ? [slot.role, 'HighCommand'] : [slot.role];
     return CATALOG.units
-      .filter((u) => roles.includes(u.role))
+      // Armoured Spearhead: Decurion tanks may also fill High Command / Command slots.
+      .filter((u) => roles.includes(u.role) || !!decurionFor(det, slot, u.id))
       .map((u) => ({ u, reasons: unitReasons(state, det.id, slot.id, u.id) }))
       .sort((a, b) => Number(a.reasons.length > 0) - Number(b.reasons.length > 0) || a.u.name.localeCompare(b.u.name));
   }, [state, det.id, slot.id, slot.role, special]);
@@ -113,6 +116,11 @@ function UnitPicker({ props, det, slot }: { props: Props; det: DetachmentInstanc
   return (
     <div>
       <h3>{fill?.unit ? 'Replace with' : 'Choose a unit for'} {slotLabel(det, slot)}</h3>
+      {det.benefitSlots?.some((x) => x.id === slot.id) && !fill?.unit && (
+        <button className="link danger" onClick={() => { commit(removeBenefitSlot(state, det.id, slot.id), 'Removed the extra ' + roleLabel(slot.role) + ' slot'); setSel(null); }}>
+          Remove this extra slot
+        </button>
+      )}
       <p className="hint">
         {special ? 'Special Assignment: High Command units may fill this Command slot. ' : ''}
         Locked units say why.{' '}

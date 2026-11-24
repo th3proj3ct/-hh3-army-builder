@@ -4,6 +4,7 @@ import type { Issue } from '../../src/model';
 import { validate } from '../../src/validate';
 import { Chart } from './Chart';
 import { DatasheetProvider } from './datasheet';
+import { ExportDialog } from './ExportDialog';
 import { Reference } from './Reference';
 import { Panel } from './Panel';
 import { PointsBar } from './PointsBar';
@@ -83,14 +84,7 @@ export function App() {
   };
 
   const r = state.roster;
-  const exportJson = () => {
-    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `${r.name.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}.json`;
-    a.click();
-    URL.revokeObjectURL(a.href);
-  };
+  const [exporting, setExporting] = useState(false);
 
   return (
     <DatasheetProvider>
@@ -163,7 +157,7 @@ export function App() {
           <button onClick={redo} disabled={!hist.future.length} title="Redo (Ctrl+Shift+Z)">Redo</button>
           <button onClick={() => { commit(emptyState(state.primaryLegion, r.pointsLimit, r.allegiance), 'New empty list'); setSel(null); }}>New list</button>
           <button onClick={() => { commit(deathGuardSample(), 'Loaded the Death Guard sample'); setSel(null); }}>Death Guard sample</button>
-          <button onClick={exportJson}>Export JSON</button>
+          <button onClick={() => setExporting(true)}>Export</button>
           <button onClick={swapSide} title={`Move the unit panel to the ${side === 'left' ? 'right' : 'left'}`} aria-label={`Unit panel is on the ${side}. Move it to the ${side === 'left' ? 'right' : 'left'}`}>
             {side === 'left' ? '◧ Panel left' : '◨ Panel right'}
           </button>
@@ -206,6 +200,8 @@ export function App() {
           <Reference state={state} />
         </main>
       )}
+
+      {exporting && <ExportDialog state={state} onClose={() => setExporting(false)} />}
 
       <footer className="foot">
         Data: BSData {CATALOG.version.replace('bsdata-', '')} · rules: Age of Darkness Rulebook v1.2 · test points checked against Wahapedia for 14 units.

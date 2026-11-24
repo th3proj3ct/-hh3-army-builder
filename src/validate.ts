@@ -35,6 +35,9 @@ const ROLE_LABEL: Record<BattlefieldRole, string> = {
 };
 export const roleLabel = (r: BattlefieldRole) => ROLE_LABEL[r];
 const article = (r: BattlefieldRole) => (/^[AEIOU]/.test(ROLE_LABEL[r]) ? 'an' : 'a');
+/** Battlefield Role of a slot in a detachment: a chart slot, a Prime-added slot or a benefit slot. */
+const slotRoleOf = (det: DetachmentInstance, def: DetachmentDef, slotId: string): BattlefieldRole | undefined =>
+  def.slots.find((s) => s.id === slotId)?.role ?? det.extraSlots.find((x) => x.id === slotId)?.role ?? det.benefitSlots?.find((x) => x.id === slotId)?.role;
 
 interface ResolvedUnit {
   inst: UnitInstance;
@@ -148,6 +151,13 @@ export function validate(roster: Roster, catalog: Catalog): ValidationResult {
       const restricted = def.slots.find((s) => s.role === extra.role && s.restriction);
       slotById.set(extra.id, { id: extra.id, role: extra.role, ...(restricted?.restriction ? { restriction: restricted.restriction } : {}) });
     }
+    // Slots added by the detachment's own benefit (Pride of the Legion, Orbital Drop Assault).
+    // How many are allowed is checked army-wide below, once every unit is known.
+    for (const b of det.benefitSlots ?? []) {
+      if (!def.primaryRules?.extraSlots?.roles.includes(b.role))
+        err('PRIMARY-EXTRA-SLOTS', `${def.name} can't add ${article(b.role)} ${roleLabel(b.role)} slot`, { ...at, slotId: b.id });
+      slotById.set(b.id, { id: b.id, role: b.role });
+    }
 
     const primeUseDet = new Map<string, number>();
     for (const fill of det.fills) {
@@ -182,7 +192,13 @@ export function validate(roster: Roster, catalog: Catalog): ValidationResult {
 
       // Role match (Special Assignment lets High Command sit in a Command slot).
       const specialAssigned = fill.primeAdvantage === 'special-assignment' && slot.role === 'Command' && role === 'HighCommand';
-      if (role !== slot.role && !specialAssigned)
+      // Armoured Spearhead: a Decurion Magna tank may fill High Command, other Decurion tanks Command.
+      const decurions = inst.options.map((o) => o.optionId).filter((id) => /--decurion-/.test(id));
+      const decurionFill =
+        def.primaryRules?.decurionCommand &&
+        ((slot.role === 'HighCommand' && decurions.some((id) => id.endsWith('--decurion-magna'))) ||
+          (slot.role === 'Command' && decurions.some((id) => !id.endsWith('--decurion-magna'))));
+      if (role !== slot.role && !specialAssigned && !decurionFill)
         err('SLOT-ROLE-MATCH', `${udef.name} is ${article(role)} ${roleLabel(role)} unit and can't fill ${article(slot.role)} ${roleLabel(slot.role)} slot`, uat);
 
       // Sub-faction (Mechanicum): fixed by the profile, or one of the profile's choices.
@@ -279,6 +295,8 @@ export function validate(roster: Roster, catalog: Catalog): ValidationResult {
             err('PRIME-UNIQUE', `${udef.name} contains a Unique model, so ${adv.name} isn't allowed`, uat);
           if (adv.slotRoles && !adv.slotRoles.includes(slot.role))
             err('PRIME-SLOT-ROLE', `${adv.name} can only be chosen for ${adv.slotRoles.map(roleLabel).join('/')} slots`, uat);
+          if (adv.onlyInDetachments && !adv.onlyInDetachments.includes(def.id))
+            err('PRIME-DET-ALLOWED', `${adv.name} can only be chosen in ${adv.onlyInDetachments.map((d) => detDefs.get(d)?.name ?? d).join('/')}`, uat);
           if (adv.allegiance && adv.allegiance !== roster.allegiance)
             err('PRIME-ELIGIBILITY', `${adv.name} is only for ${adv.allegiance} armies`, uat);
           const ur = adv.unitRequirement;
@@ -289,6 +307,7 @@ export function validate(roster: Roster, catalog: Catalog): ValidationResult {
             if (ur.factionTraits && (!faction || !ur.factionTraits.includes(faction))) fails.push(`Faction must be ${ur.factionTraits.join('/')}`);
             if (ur.armyLists && !ur.armyLists.includes(udef.armyList)) fails.push('army list');
             if (ur.excludeModelTags?.some((t) => tags.has(t))) fails.push(`no ${ur.excludeModelTags.join('/')} models`);
+            if (ur.modelTags && !ur.modelTags.some((t) => tags.has(t))) fails.push(`needs a ${ur.modelTags.join('/')} model`);
             if (fails.length) err('PRIME-ELIGIBILITY', `${udef.name} doesn't qualify for ${adv.name} (${fails.join('; ')})`, uat);
           }
           primeUseDet.set(adv.id, (primeUseDet.get(adv.id) ?? 0) + 1);
@@ -310,6 +329,73 @@ export function validate(roster: Roster, catalog: Catalog): ValidationResult {
     // One sub-faction per detachment (BSData: "Multiple Mechanicum Traits in Detachment").
     const subs = new Set(resolved.filter((u) => u.det === det && u.subFaction).map((u) => u.subFaction!));
     if (subs.size > 1) err('DET-SINGLE-SUBFACTION', `${def.name} mixes Mechanicum sub-factions (${[...subs].sort().join(', ')}); a detachment uses one`, at);
+  }
+
+  // ── Alternative Primary Detachments (Pride of the Legion, Armoured Spearhead…) ──
+  const primaryDet = roster.detachments.find((d) => resolvedDefs.get(d.id)?.kind === 'Primary');
+  const primaryDef = primaryDet && resolvedDefs.get(primaryDet.id);
+  const pr = primaryDef?.primaryRules;
+  if (primaryDet && primaryDef && pr) {
+    const pat = { detachmentId: primaryDet.id };
+    const who = primaryDef.name;
+    // "Only the following additional Detachments may be selected."
+    if (pr.allowedDetachments) {
+      const counts = new Map<string, number>();
+      for (const d of roster.detachments) {
+        const dd = resolvedDefs.get(d.id);
+        if (!dd || d === primaryDet) continue;
+        counts.set(dd.id, (counts.get(dd.id) ?? 0) + 1);
+        if (!pr.allowedDetachments.includes(dd.id))
+          err('PRIMARY-ALLOWED-DETACHMENTS', `${who} only allows these other detachments: ${pr.allowedDetachments.map((x) => detDefs.get(x)?.name ?? x).join(', ')} (not ${dd.name})`, { detachmentId: d.id });
+      }
+      for (const [id, max] of Object.entries(pr.maxOf ?? {}))
+        if ((counts.get(id) ?? 0) > max) err('PRIMARY-ALLOWED-DETACHMENTS', `${who} allows at most ${max} ${detDefs.get(id)?.name ?? id}`, pat);
+    }
+    // "Lord of War (may only be used to select Models with the Transport Sub-Type)".
+    if (pr.lordOfWarModelTag)
+      for (const u of resolved)
+        if (u.detDef.kind === 'LordOfWar' && !u.tags.has(pr.lordOfWarModelTag))
+          err('PRIMARY-UNIT-LIMITS', `With ${who}, the Lord of War Detachment may only take ${pr.lordOfWarModelTag} units (not ${u.def.name})`, { detachmentId: u.det.id, slotId: u.slotId });
+    // "Prime Advantages which add additional Battlefield Role Slots may not be selected."
+    if (pr.noSlotAddingPrimes)
+      for (const d of roster.detachments)
+        for (const x of d.extraSlots)
+          if (!pr.noSlotAddingPrimes.exceptRoles?.includes(x.role))
+            err('PRIMARY-NO-SLOT-PRIMES', `${who}: ${primeDefs.get(x.grantedBy.primeAdvantageId)?.name ?? 'This Prime Advantage'} can't add slots${pr.noSlotAddingPrimes.exceptRoles ? ` (except ${pr.noSlotAddingPrimes.exceptRoles.map(roleLabel).join('/')} slots)` : ''}`, { detachmentId: d.id, slotId: x.grantedBy.slotId });
+    // "An Army using this Primary Detachment must include at least one Model with the Master of the Legion Trait."
+    if (pr.armyNeedsRule && !resolved.some((u) => u.def.rules?.includes(pr.armyNeedsRule!)))
+      err('PRIMARY-UNIT-LIMITS', `${who} needs a unit with ${pr.armyNeedsRule} somewhere in the army`, pat);
+    // Units of some types need Battlesmith (Fury: Command/Specialist; Spearhead: anything but Vehicles).
+    if (pr.unitsNeedRule) {
+      const { ifTags, ifNotTags, rule } = pr.unitsNeedRule;
+      for (const u of resolved) {
+        const applies = (ifTags && ifTags.some((t) => u.tags.has(t))) || (ifNotTags && !ifNotTags.some((t) => u.tags.has(t)));
+        if (applies && !u.def.rules?.includes(rule))
+          err('PRIMARY-UNIT-LIMITS', `With ${who}, ${u.def.name} needs the ${rule} (X) rule (${ifTags ? `${ifTags.join('/')} units` : `non-${ifNotTags!.join('/')} units`})`, { detachmentId: u.det.id, slotId: u.slotId });
+      }
+    }
+    if (pr.noImmobile)
+      for (const u of resolved.filter((x) => x.def.rules?.includes('Immobile')))
+        err('PRIMARY-UNIT-LIMITS', `With ${who}, units with a Move of 0 or "-" can't be taken (${u.def.name})`, { detachmentId: u.det.id, slotId: u.slotId });
+    // Its own extra slots: one per filled slot of some roles here, or per non-Vehicle unit in the army.
+    const xs = pr.extraSlots;
+    const added = primaryDet.benefitSlots ?? [];
+    if (added.length && xs) {
+      const filledHere = (role: string) => resolved.filter((u) => u.det === primaryDet && slotRoleOf(primaryDet, primaryDef, u.slotId) === role).length;
+      const allowance = xs.perFilledRoles
+        ? xs.perFilledRoles.reduce((s, r) => s + filledHere(r), 0)
+        : xs.perNonVehicleUnit
+          ? resolved.filter((u) => !u.tags.has('Vehicle')).length
+          : 0;
+      if (added.length > allowance)
+        err('PRIMARY-EXTRA-SLOTS', `${who} has ${added.length} extra ${xs.roles.map(roleLabel).join('/')} slots but may add ${allowance} (one per ${xs.perFilledRoles ? `filled ${xs.perFilledRoles.map(roleLabel).join('/')} slot` : 'non-Vehicle unit in the army'})`, pat);
+    }
+    if (pr.warnUnlessTags)
+      for (const u of resolved.filter((x) => !pr.warnUnlessTags!.some((t) => x.tags.has(t))))
+        warn('PRIMARY-DEPLOYMENT', `${u.def.name} isn't ${pr.warnUnlessTags.join(' or ')}: with ${who} it can only deploy embarked on a Flyer transport, otherwise it's removed as a casualty`, { detachmentId: u.det.id, slotId: u.slotId });
+  } else if (roster.detachments.some((d) => d.benefitSlots?.length)) {
+    for (const d of roster.detachments.filter((x) => x.benefitSlots?.length))
+      err('PRIMARY-EXTRA-SLOTS', `${resolvedDefs.get(d.id)?.name ?? 'This detachment'} has no benefit that adds slots`, { detachmentId: d.id });
   }
 
   // ── Rites of War ─────────────────────────────────────────────────────────

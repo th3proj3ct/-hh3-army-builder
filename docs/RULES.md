@@ -95,6 +95,22 @@ Status key: ✅ confirmed as written · ⚠️ ambiguous (reading chosen, flagge
 - **Legions may ally other Legions** of the same Allegiance.
 - **Death Guard:** Reaping Host (Troops Prime, Troops, Support, Heavy Assault; no Assault Squads in Troops; Death Guard Primary only). Unnatural Resilience is once per army, for a Death Guard Centurion or "Cataphractii Centurion" (mapped to Centurion in Terminator Armour, **confirm**).
 
+## Legiones Astartes Primary Detachments (23 Nov 2026)
+
+From the Warhammer Community PDF "Legiones Astartes Primary Detachments" (Nov 2026): a Legiones Astartes army may use one of these instead of the Crusade Primary Detachment. Slot layouts were read from its charts (role icons matched against the role icon set); restrictions are paraphrased into `PrimaryRules` in `src/core-data.ts`, and `test/astartes-primary.test.ts` covers each.
+
+| Primary Detachment | Slots (★ Prime) | Enforced |
+|---|---|---|
+| Pride of the Legion | HC; ★Command, Command, Retinue ×3; ★Heavy Assault + 4; ★Elites + 4 | Army needs a Master of the Legion; other detachments only Officer Cadre, Shock Assault, Heavy Support, Warlord, Lord of War (Transport units only); no slot-adding Primes; +1 Heavy Transport slot per filled Retinue/Heavy Assault/Elites slot |
+| Fury of the Ancients | HC, Retinue; ★Command, Command; ★War-engine + 4; ★War-engine + 4 | Command/Specialist units need Battlesmith; slot-adding Primes only for War-engine slots; other detachments only Techmarine Covenant, Heavy Support, Lord of War (Transport units only); Ancient of War Prime (Walkers) |
+| Sky-Hunter Phalanx | HC; ★Command, Command, Retinue ×2; ★Fast Attack + 4; ★Fast Attack + 4 | Other detachments only First Strike, Combat Pioneer, Lord of War; no slot-adding Primes; Skilled Riders Prime; non-Antigrav/Flyer units get a **warning** (they're removed unless carried by a Flyer) |
+| Armoured Spearhead | HC; Command ×3, Transport; Armour ×10 (no Prime slots) | Non-Vehicles need Battlesmith; no Move 0/"-" units; Decurion Magna tanks may fill HC, other Decurion tanks Command (the builder adds the upgrade when you place one); other detachments only Armoured Support, Combat Pioneer, First Strike, Techmarine Covenant, Armoured Fist, Lord of War; no slot-adding Primes |
+| Orbital Drop Assault | HC; ★Command, Command, Retinue; ★Heavy Assault, Heavy Assault, ★Troops, Troops; ★Elites, Elites, Transport ×2 | Other detachments only Tactical Support, First Strike (max 1), Shock Assault, Heavy Support, Warlord, Lord of War; no slot-adding Primes; +1 Transport or Heavy Transport slot per non-Vehicle unit in the army |
+
+**Ambiguous:** "Prime Advantages which add additional Battlefield Role Slots to a Detachment may not be selected" is applied to every detachment in the army (it's listed with the army-wide restrictions). ⚠️
+
+**Not enforced (in-game, not list-building):** Victory Points for destroyed Elites/Heavy Assault (Pride) or War-engine (Fury) units; Pride's Vanguard (X) → Line (1) swap; Squadron Tactics (Armoured Spearhead); Orbital Drop Protocols and the Orbital Drop Table. **Not done:** Sky-Hunter's White Scars slot exchanges (Retinue → Golden Keshig Elites, Fast Attack → Kyzagan Support); Ancient of War's "not Malefic" condition (Malefic isn't imported as a model type).
+
 ## Legion Additional Detachments (14 Nov 2026)
 
 Every Legion now has its Additional Detachments: "An Army that has a Primary Detachment with the <Legion> Faction may select the following … Detachments using the standard Rules". Layouts and slot restrictions were read from each Legion's Wahapedia page (the chart markup) and compared with BSData's force entries; `test/legion-detachments.test.ts` checks all 28 layouts and builds each detachment for its own Legion (legal) and another (refused).

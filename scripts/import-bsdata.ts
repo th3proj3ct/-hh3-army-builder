@@ -443,7 +443,18 @@ function importUnit(link: Node, catalogueName: string, role: BattlefieldRole, fa
     factionTrait: factionFromLink,
     modelTags: tags,
     ...subFactionOf(unit, models),
-    ...((unit.entryLinks ?? []).some((l: Node) => l.name === 'Inductii') || /Inductii/.test(unit.name) ? { rules: ['Inductii'] } : {}),
+    // List-building facts the validator checks (Inductii: no Primes; the Legiones Astartes
+    // Primary Detachments: Battlesmith, Master of the Legion, Move 0).
+    ...(() => {
+      const ds = datasheets[id]!;
+      const rules = [
+        ...((unit.entryLinks ?? []).some((l: Node) => l.name === 'Inductii') || /Inductii/.test(unit.name) ? ['Inductii'] : []),
+        ...(always(/^Battlesmith \(\d+\)$/) ? ['Battlesmith'] : []),
+        ...(ds.traits.includes('Master of the Legion') ? ['Master of the Legion'] : []),
+        ...(ds.models.some((m) => m.profile.M === '0' || m.profile.M === '-') ? ['Immobile'] : []),
+      ];
+      return rules.length ? { rules } : {};
+    })(),
     ...(commandAuxUnlocks && commandAuxUnlocks > 1 ? { commandAuxUnlocks } : {}),
     ...(consul ? { commandUnlocksApex: true } : {}),
     ...(tank ? { tankCommander: Number(/\((\d+)\)/.exec(tank)![1]) } : {}),
@@ -664,9 +675,62 @@ for (const file of catalogueFiles) {
 const outDir = join(import.meta.dirname, '..', 'data', 'bsdata');
 mkdirSync(outDir, { recursive: true });
 const sorted = [...units.values()].sort((a, b) => a.name.localeCompare(b.name));
+
+// ── special-rules glossary (display only: hover text in datasheets) ─────────
+// Every rule named by an imported datasheet (unit rules and weapons' "Special Rules"),
+// with its full BSData text. "Shred (6)" is looked up as "Shred (X)". Where a name has
+// more than one text, Special Rules.json wins, then the game system, then catalogues.
+const ruleText = new Map<string, string>();
+{
+  const files = readdirSync(repo).filter((f) => f.endsWith('.json'));
+  const rank = (f: string) => (f === 'Special Rules.json' ? 0 : f === 'Horus Heresy 3rd Edition.json' ? 1 : 2);
+  for (const f of files.sort((a, b) => rank(a) - rank(b))) {
+    const walk = (o: unknown) => {
+      if (Array.isArray(o)) o.forEach(walk);
+      else if (o && typeof o === 'object') {
+        const n = o as Node;
+        if (typeof n.name === 'string' && typeof n.description === 'string' && n.description.trim().length > 20 && !n.typeId && !ruleText.has(n.name.trim()))
+          ruleText.set(n.name.trim(), n.description.replace(/\s+/g, ' ').trim());
+        Object.values(n).forEach(walk);
+      }
+    };
+    walk(JSON.parse(readFileSync(join(repo, f), 'utf8')));
+  }
+}
+/**
+ * Glossary key: lower case, straight apostrophes, single spaces, and any trailing "(…)" value
+ * made generic, so "Shred (6)", "Shred (4+)" and "Shred (X)" all share "shred (x)".
+ * ui/src/loadout.ts › ruleKey must stay identical.
+ */
+const ruleKey = (name: string) =>
+  name.toLowerCase().replace(/[’‘]/g, "'").replace(/\s+/g, ' ').trim().replace(/\s*\([^)]*\)$/, ' (x)');
+/** Split "Shred (6), Shock (Pinning, Suppressed)" at commas outside brackets; BSData sometimes omits the comma ("Shred (4+) Reaping Blow (2)"). */
+const splitRules = (text: string) => text.split(/,(?![^(]*\))|(?<=\))\s+(?=[A-Z])/).map((x) => x.trim()).filter((x) => x && x !== '-');
+const byKey = new Map<string, { name: string; text: string }>();
+for (const [name, text] of ruleText) if (!byKey.has(ruleKey(name))) byKey.set(ruleKey(name), { name, text });
+const glossary: Record<string, { name: string; text: string }> = {};
+const missingRules = new Set<string>();
+const wantRule = (raw: string) => {
+  for (const key of [ruleKey(raw), `${ruleKey(raw)} (x)`]) {
+    const hit = byKey.get(key);
+    if (hit) return void (glossary[key] = hit);
+  }
+  missingRules.add(raw.trim());
+};
+for (const u of sorted) {
+  const ds = datasheets[u.id];
+  if (!ds) continue;
+  for (const r of ds.rules) {
+    wantRule(r.name);
+    for (const v of r.variants ?? []) wantRule(v.name);
+    if (r.otherwise) wantRule(r.otherwise);
+  }
+  for (const w of ds.weapons) for (const part of splitRules(w.stats['Special Rules'] ?? '')) wantRule(part);
+}
+
 writeFileSync(
   join(outDir, 'datasheets.json'),
-  JSON.stringify({ commit: sha, datasheets: Object.fromEntries(sorted.map((u) => [u.id, datasheets[u.id]])) }) + '\n',
+  JSON.stringify({ commit: sha, glossary, datasheets: Object.fromEntries(sorted.map((u) => [u.id, datasheets[u.id]])) }) + '\n',
 );
 writeFileSync(join(outDir, 'units.json'),JSON.stringify({ source: 'https://github.com/BSData/horus-heresy-3rd-edition', commit: sha, catalogues: catalogueFiles, units: sorted }, null, 2) + '\n');
 
@@ -680,6 +744,10 @@ const lines = [
   '## Root entries not imported (not a plain Battlefield Role)',
   '',
   ...skippedLinks.map((s) => `- ${s}`),
+  '',
+  '## Special rules with no text found (no hover text in datasheets)',
+  '',
+  ...[...missingRules].sort().map((s) => `- ${s}`),
   '',
   '## Per-unit notes',
   '',

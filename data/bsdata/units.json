@@ -36,6 +36,9 @@
         "Unique",
         "Command"
       ],
+      "rules": [
+        "Master of the Legion"
+      ],
       "points": {
         "base": 170,
         "minModels": 1,
@@ -820,6 +823,9 @@
         "Unique",
         "Light"
       ],
+      "rules": [
+        "Master of the Legion"
+      ],
       "points": {
         "base": 465,
         "minModels": 1,
@@ -1109,6 +1115,9 @@
         "Unique"
       ],
       "subFaction": "Archimandrite",
+      "rules": [
+        "Battlesmith"
+      ],
       "points": {
         "base": 410,
         "minModels": 1,
@@ -1132,6 +1141,9 @@
       "modelTags": [
         "Paragon",
         "Unique"
+      ],
+      "rules": [
+        "Master of the Legion"
       ],
       "points": {
         "base": 450,
@@ -1157,6 +1169,9 @@
         "Paragon",
         "Unique",
         "Antigrav"
+      ],
+      "rules": [
+        "Master of the Legion"
       ],
       "points": {
         "base": 600,
@@ -1894,6 +1909,9 @@
       "modelTags": [
         "Vehicle"
       ],
+      "rules": [
+        "Immobile"
+      ],
       "points": {
         "base": 125,
         "minModels": 1,
@@ -1926,6 +1944,9 @@
         "Malagra",
         "Myrmidax",
         "Reductor"
+      ],
+      "rules": [
+        "Battlesmith"
       ],
       "points": {
         "base": 120,
@@ -2410,6 +2431,9 @@
         "Command"
       ],
       "subFaction": "Archimandrite",
+      "rules": [
+        "Battlesmith"
+      ],
       "points": {
         "base": 200,
         "minModels": 1,
@@ -2457,6 +2481,9 @@
         "Malagra",
         "Myrmidax",
         "Reductor"
+      ],
+      "rules": [
+        "Battlesmith"
       ],
       "points": {
         "base": 150,
@@ -2940,6 +2967,9 @@
         "Command"
       ],
       "subFaction": "Malagra",
+      "rules": [
+        "Battlesmith"
+      ],
       "points": {
         "base": 115,
         "minModels": 1,
@@ -3613,6 +3643,9 @@
         "Infantry",
         "Unique",
         "Command"
+      ],
+      "rules": [
+        "Master of the Legion"
       ],
       "points": {
         "base": 185,
@@ -8607,6 +8640,9 @@
         "Unique",
         "Command"
       ],
+      "rules": [
+        "Master of the Legion"
+      ],
       "commandUnlocksApex": true,
       "points": {
         "base": 135,
@@ -10037,6 +10073,9 @@
         "Command",
         "Heavy"
       ],
+      "rules": [
+        "Master of the Legion"
+      ],
       "points": {
         "base": 200,
         "minModels": 1,
@@ -10088,6 +10127,9 @@
         "Unique",
         "Command"
       ],
+      "rules": [
+        "Master of the Legion"
+      ],
       "points": {
         "base": 215,
         "minModels": 1,
@@ -10125,6 +10167,9 @@
       "modelTags": [
         "Walker",
         "Unique"
+      ],
+      "rules": [
+        "Battlesmith"
       ],
       "points": {
         "base": 220,
@@ -22172,6 +22217,9 @@
         "Unique",
         "Command"
       ],
+      "rules": [
+        "Master of the Legion"
+      ],
       "points": {
         "base": 180,
         "minModels": 1,
@@ -23272,6 +23320,9 @@
         "Unique",
         "Command"
       ],
+      "rules": [
+        "Master of the Legion"
+      ],
       "points": {
         "base": 220,
         "minModels": 1,
@@ -23296,6 +23347,9 @@
         "Paragon",
         "Unique",
         "Antigrav"
+      ],
+      "rules": [
+        "Master of the Legion"
       ],
       "points": {
         "base": 440,
@@ -24985,6 +25039,9 @@
       "factionTrait": null,
       "modelTags": [
         "Vehicle"
+      ],
+      "rules": [
+        "Immobile"
       ],
       "points": {
         "base": 90,
@@ -34068,6 +34125,9 @@
         "Vehicle",
         "Transport"
       ],
+      "rules": [
+        "Immobile"
+      ],
       "points": {
         "base": 100,
         "minModels": 1,
@@ -34211,6 +34271,9 @@
       "modelTags": [
         "Vehicle",
         "Transport"
+      ],
+      "rules": [
+        "Immobile"
       ],
       "points": {
         "base": 50,
@@ -35998,6 +36061,9 @@
         "Command",
         "Heavy"
       ],
+      "rules": [
+        "Master of the Legion"
+      ],
       "points": {
         "base": 250,
         "minModels": 1,
@@ -36597,6 +36663,10 @@
       "modelTags": [
         "Paragon",
         "Unique"
+      ],
+      "rules": [
+        "Battlesmith",
+        "Master of the Legion"
       ],
       "points": {
         "base": 465,
@@ -37552,6 +37622,9 @@
       "modelTags": [
         "Infantry",
         "Command"
+      ],
+      "rules": [
+        "Battlesmith"
       ],
       "points": {
         "base": 110,
@@ -38908,6 +38981,9 @@
         "Command",
         "Heavy"
       ],
+      "rules": [
+        "Battlesmith"
+      ],
       "points": {
         "base": 130,
         "minModels": 1,
@@ -39353,6 +39429,9 @@
         "Paragon",
         "Unique"
       ],
+      "rules": [
+        "Master of the Legion"
+      ],
       "points": {
         "base": 425,
         "minModels": 1,
@@ -39377,6 +39456,9 @@
         "Paragon",
         "Unique",
         "Antigrav"
+      ],
+      "rules": [
+        "Master of the Legion"
       ],
       "points": {
         "base": 600,
@@ -40041,6 +40123,9 @@
         "Infantry",
         "Unique",
         "Command"
+      ],
+      "rules": [
+        "Master of the Legion"
       ],
       "points": {
         "base": 175,
@@ -46075,6 +46160,9 @@
         "Paragon",
         "Unique"
       ],
+      "rules": [
+        "Master of the Legion"
+      ],
       "points": {
         "base": 850,
         "minModels": 1,
@@ -46098,6 +46186,9 @@
       "modelTags": [
         "Paragon",
         "Unique"
+      ],
+      "rules": [
+        "Master of the Legion"
       ],
       "points": {
         "base": 530,
@@ -46570,6 +46661,9 @@
         "Infantry",
         "Unique",
         "Command"
+      ],
+      "rules": [
+        "Master of the Legion"
       ],
       "points": {
         "base": 210,
@@ -54739,6 +54833,10 @@
         "Command",
         "Heavy"
       ],
+      "rules": [
+        "Battlesmith",
+        "Master of the Legion"
+      ],
       "points": {
         "base": 175,
         "minModels": 1,
@@ -54991,6 +55089,10 @@
       "modelTags": [
         "Infantry",
         "Command"
+      ],
+      "rules": [
+        "Battlesmith",
+        "Master of the Legion"
       ],
       "points": {
         "base": 150,
@@ -58105,6 +58207,9 @@
         "Paragon",
         "Unique"
       ],
+      "rules": [
+        "Master of the Legion"
+      ],
       "points": {
         "base": 440,
         "minModels": 1,
@@ -59268,6 +59373,9 @@
         "Unique",
         "Command"
       ],
+      "rules": [
+        "Master of the Legion"
+      ],
       "points": {
         "base": 175,
         "minModels": 1,
@@ -59548,6 +59656,9 @@
       "modelTags": [
         "Paragon",
         "Unique"
+      ],
+      "rules": [
+        "Master of the Legion"
       ],
       "points": {
         "base": 450,
@@ -61994,6 +62105,9 @@
         "Paragon",
         "Unique"
       ],
+      "rules": [
+        "Master of the Legion"
+      ],
       "points": {
         "base": 450,
         "minModels": 1,
@@ -64344,6 +64458,9 @@
         "Unique",
         "Paragon"
       ],
+      "rules": [
+        "Master of the Legion"
+      ],
       "points": {
         "base": 460,
         "minModels": 1,
@@ -65419,6 +65536,9 @@
         "Command",
         "Antigrav"
       ],
+      "rules": [
+        "Master of the Legion"
+      ],
       "points": {
         "base": 215,
         "minModels": 1,
@@ -65616,6 +65736,9 @@
         "Malagra",
         "Myrmidax",
         "Reductor"
+      ],
+      "rules": [
+        "Battlesmith"
       ],
       "commandAuxUnlocks": 2,
       "points": {
@@ -66061,6 +66184,9 @@
         "Malagra",
         "Myrmidax",
         "Reductor"
+      ],
+      "rules": [
+        "Battlesmith"
       ],
       "commandAuxUnlocks": 2,
       "points": {
@@ -66522,6 +66648,9 @@
         "Unique",
         "Command",
         "Heavy"
+      ],
+      "rules": [
+        "Master of the Legion"
       ],
       "points": {
         "base": 225,
@@ -69707,6 +69836,9 @@
         "Malagra",
         "Myrmidax",
         "Reductor"
+      ],
+      "rules": [
+        "Immobile"
       ],
       "points": {
         "base": 45,
@@ -73808,6 +73940,9 @@
         "Paragon",
         "Unique"
       ],
+      "rules": [
+        "Master of the Legion"
+      ],
       "points": {
         "base": 425,
         "minModels": 1,
@@ -73831,6 +73966,9 @@
       "modelTags": [
         "Infantry",
         "Specialist"
+      ],
+      "rules": [
+        "Battlesmith"
       ],
       "points": {
         "base": 100,
@@ -74090,6 +74228,9 @@
         "Infantry",
         "Specialist",
         "Heavy"
+      ],
+      "rules": [
+        "Battlesmith"
       ],
       "points": {
         "base": 120,
@@ -78861,6 +79002,9 @@
         "Cavalry",
         "Command"
       ],
+      "rules": [
+        "Battlesmith"
+      ],
       "points": {
         "base": 140,
         "minModels": 1,
@@ -81406,6 +81550,9 @@
       "modelTags": [
         "Cavalry",
         "Command"
+      ],
+      "rules": [
+        "Master of the Legion"
       ],
       "points": {
         "base": 160,
@@ -85782,6 +85929,9 @@
         "Command",
         "Heavy"
       ],
+      "rules": [
+        "Battlesmith"
+      ],
       "points": {
         "base": 115,
         "minModels": 1,
@@ -87595,6 +87745,9 @@
       "modelTags": [
         "Infantry",
         "Sergeant"
+      ],
+      "rules": [
+        "Battlesmith"
       ],
       "points": {
         "base": 130,
@@ -97397,6 +97550,10 @@
         "Paragon",
         "Unique"
       ],
+      "rules": [
+        "Battlesmith",
+        "Master of the Legion"
+      ],
       "points": {
         "base": 425,
         "minModels": 1,
@@ -98123,6 +98280,9 @@
       "modelTags": [
         "Infantry",
         "Command"
+      ],
+      "rules": [
+        "Master of the Legion"
       ],
       "points": {
         "base": 120,
@@ -100987,6 +101147,9 @@
         "Command",
         "Heavy"
       ],
+      "rules": [
+        "Master of the Legion"
+      ],
       "points": {
         "base": 200,
         "minModels": 1,
@@ -101213,6 +101376,9 @@
         "Infantry",
         "Command",
         "Heavy"
+      ],
+      "rules": [
+        "Master of the Legion"
       ],
       "points": {
         "base": 145,
@@ -108213,6 +108379,9 @@
         "Infantry",
         "Command"
       ],
+      "rules": [
+        "Battlesmith"
+      ],
       "points": {
         "base": 95,
         "minModels": 1,
@@ -112938,6 +113107,9 @@
         "Infantry",
         "Unique",
         "Command"
+      ],
+      "rules": [
+        "Master of the Legion"
       ],
       "points": {
         "base": 220,
@@ -119803,6 +119975,9 @@
         "Paragon",
         "Unique"
       ],
+      "rules": [
+        "Master of the Legion"
+      ],
       "points": {
         "base": 465,
         "minModels": 1,
@@ -121439,6 +121614,9 @@
         "Unique",
         "Antigrav"
       ],
+      "rules": [
+        "Master of the Legion"
+      ],
       "points": {
         "base": 485,
         "minModels": 1,
@@ -122185,6 +122363,9 @@
         "Infantry",
         "Unique",
         "Command"
+      ],
+      "rules": [
+        "Master of the Legion"
       ],
       "commandAuxUnlocks": 2,
       "points": {
@@ -127712,6 +127893,9 @@
         "Unique",
         "Command"
       ],
+      "rules": [
+        "Master of the Legion"
+      ],
       "points": {
         "base": 220,
         "minModels": 1,
@@ -127736,6 +127920,10 @@
         "Infantry",
         "Unique",
         "Command"
+      ],
+      "rules": [
+        "Battlesmith",
+        "Master of the Legion"
       ],
       "points": {
         "base": 175,
@@ -129948,6 +130136,9 @@
       "modelTags": [
         "Vehicle",
         "Transport"
+      ],
+      "rules": [
+        "Master of the Legion"
       ],
       "tankCommander": 2,
       "points": {
@@ -134785,6 +134976,9 @@
       "modelTags": [
         "Vehicle"
       ],
+      "rules": [
+        "Immobile"
+      ],
       "points": {
         "base": 45,
         "minModels": 2,
@@ -138698,6 +138892,9 @@
         "Myrmidax",
         "Reductor"
       ],
+      "rules": [
+        "Battlesmith"
+      ],
       "points": {
         "base": 30,
         "minModels": 1,
@@ -139130,6 +139327,9 @@
       "modelTags": [
         "Infantry",
         "Specialist"
+      ],
+      "rules": [
+        "Battlesmith"
       ],
       "points": {
         "base": 50,
@@ -141426,6 +141626,9 @@
         "Infantry",
         "Unique",
         "Command"
+      ],
+      "rules": [
+        "Master of the Legion"
       ],
       "points": {
         "base": 160,
@@ -152219,6 +152422,9 @@
         "Paragon",
         "Unique"
       ],
+      "rules": [
+        "Master of the Legion"
+      ],
       "points": {
         "base": 465,
         "minModels": 1,
@@ -155832,6 +156038,10 @@
         "Command",
         "Heavy"
       ],
+      "rules": [
+        "Battlesmith",
+        "Master of the Legion"
+      ],
       "points": {
         "base": 165,
         "minModels": 1,
@@ -155868,6 +156078,10 @@
       "modelTags": [
         "Infantry",
         "Command"
+      ],
+      "rules": [
+        "Battlesmith",
+        "Master of the Legion"
       ],
       "points": {
         "base": 140,

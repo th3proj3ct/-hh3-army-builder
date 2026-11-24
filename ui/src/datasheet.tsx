@@ -1,24 +1,13 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
-import type { OptionDef, UnitInstance } from '../../src/model';
+import type { UnitInstance } from '../../src/model';
+import { buildLoadout, loadDatasheets, loadGlossary, lookupRule, splitRules, type Datasheet, type Glossary } from './loadout';
 import { unitPoints } from '../../src/points';
 import { roleLabel } from '../../src/validate';
 import { detachmentsFor, howAvailable } from './fits';
 import { unitDefs } from './state';
 import { RoleIcon } from './RoleIcon';
 
-interface Datasheet {
-  models: { name: string; min: number; max: number; profile: Record<string, string> }[];
-  wargear: { model: string; items: string[] }[];
-  weapons: { name: string; kind: 'Ranged' | 'Melee'; stats: Record<string, string>; legions?: string[] }[];
-  rules: { name: string; summary: string; legions?: string[]; whenSelected?: string; variants?: { when: string; name: string }[]; otherwise?: string }[];
-  traits: string[];
-  items?: Record<string, string[]>;
-}
 
-// Datasheets are display-only and large, so they load on first use (own bundle chunk).
-let cache: Promise<Record<string, Datasheet>> | null = null;
-const loadDatasheets = () =>
-  (cache ??= import('../../data/bsdata/datasheets.json').then((m) => (m.default as unknown as { datasheets: Record<string, Datasheet> }).datasheets));
 
 export interface DatasheetRequest {
   unitId: string;
@@ -64,55 +53,44 @@ export function EyeButton({ unitId, inst, faction, allegiance, label }: Datashee
   );
 }
 
-/**
- * Work out what a built unit carries: each model type's default kit, minus items swapped
- * out by exchange options, plus every option taken. Returns display lines and the set of
- * weapon profile names in use.
- */
-function buildLoadout(sheet: Datasheet, options: OptionDef[], inst: UnitInstance) {
-  const optById = new Map(options.map((o) => [o.id, o]));
-  // Model counts: each type at its minimum, extra models go to the first variable type.
-  let spare = Math.max(0, inst.models - sheet.models.reduce((s, m) => s + m.min, 0));
-  const counts = new Map<string, number>();
-  for (const m of sheet.models) {
-    const extra = m.max > m.min ? Math.min(spare, m.max - m.min) : 0;
-    spare -= extra;
-    counts.set(m.name, m.min + extra);
-  }
-  const unitKit = sheet.wargear.find((w) => w.model === 'Unit')?.items ?? [];
-  const lines = sheet.models.map((m) => {
-    const n = counts.get(m.name) ?? 0;
-    const kit = new Map<string, number>();
-    for (const it of [...(sheet.wargear.find((w) => w.model === m.name)?.items ?? []), ...unitKit]) kit.set(it, n);
-    for (const sel of inst.options) {
-      const o = optById.get(sel.optionId);
-      if (!o?.display || (o.display.model ?? m.name) !== m.name) continue;
-      kit.set(o.display.item, (kit.get(o.display.item) ?? 0) + sel.count);
-      const swapped = o.display.replaces && [...kit.keys()].find((k) => k.toLowerCase() === o.display!.replaces!.toLowerCase());
-      if (swapped) kit.set(swapped, Math.max(0, (kit.get(swapped) ?? 0) - sel.count));
-    }
-    const items = [...kit.entries()].filter(([, c]) => c > 0).map(([it, c]) => (c === n ? it : `${c}× ${it}`));
-    return { model: m.name, count: n, items, kit };
-  });
-  // Unit-level options (no model), e.g. vehicle upgrades.
-  const unitLevel = inst.options
-    .map((sel) => ({ sel, o: optById.get(sel.optionId) }))
-    .filter((x) => x.o?.display && !x.o.display.model && !sheet.models.some((m) => m.name === x.o!.display!.model));
-  if (unitLevel.length && sheet.models.length > 1)
-    lines.push({ model: 'Unit upgrades', count: 1, items: unitLevel.map((x) => `${x.sel.count > 1 ? `${x.sel.count}× ` : ''}${x.o!.display!.item}`), kit: new Map(unitLevel.map((x) => [x.o!.display!.item, x.sel.count])) });
-  else if (unitLevel.length && lines[0]) {
-    for (const x of unitLevel) lines[0].kit.set(x.o!.display!.item, x.sel.count);
-    lines[0].items = [...lines[0].kit.entries()].filter(([, c]) => c > 0).map(([it, c]) => (c === lines[0]!.count ? it : `${c}× ${it}`));
-  }
-  const weapons = new Set<string>();
-  const carriedItems = new Set<string>();
-  for (const l of lines)
-    for (const [it, c] of l.kit)
-      if (c > 0) {
-        carriedItems.add(it.toLowerCase());
-        for (const w of sheet.items?.[it] ?? [it]) weapons.add(w);
-      }
-  return { lines: lines.filter((l) => l.count > 0 || l.items.length), weapons, carriedItems };
+// ── special-rule hover text ────────────────────────────────────────────────
+interface Tip { name: string; text: string; x?: string; rect: DOMRect }
+const TipCtx = createContext<{ glossary: Glossary; show: (t: Tip) => void; hide: () => void }>({ glossary: {}, show: () => {}, hide: () => {} });
+
+/** A rule name that shows the rule's full text on hover, keyboard focus or tap. */
+function RuleName({ name }: { name: string }) {
+  const { glossary, show, hide } = useContext(TipCtx);
+  const rule = lookupRule(glossary, name);
+  if (!rule) return <>{name}</>;
+  const open = (e: { currentTarget: HTMLElement }) => show({ ...rule, rect: e.currentTarget.getBoundingClientRect() });
+  return (
+    <span className="rule-tip" tabIndex={0} role="button" aria-label={`${name}: show rule`} onMouseEnter={open} onFocus={open} onMouseLeave={hide} onBlur={hide} onClick={(e) => { e.stopPropagation(); open(e); }}>
+      {name}
+    </span>
+  );
+}
+/** A weapon's "Special Rules" cell: each rule hoverable, commas kept. */
+function RuleList({ text }: { text: string }) {
+  const parts = splitRules(text);
+  if (!parts.length) return <>{text}</>;
+  return <>{parts.map((p, i) => <span key={i}>{i ? ', ' : ''}<RuleName name={p} /></span>)}</>;
+}
+/** The pop-up itself: under the rule (or above it, near the bottom of the screen), kept on screen. */
+function RulePopup({ tip, keep, hide }: { tip: Tip; keep: () => void; hide: () => void }) {
+  const w = Math.min(380, window.innerWidth - 16);
+  const left = Math.max(8, Math.min(tip.rect.left, window.innerWidth - w - 8));
+  const below = tip.rect.bottom + 6;
+  const above = window.innerHeight - tip.rect.top + 6;
+  const roomBelow = window.innerHeight - below;
+  const style = roomBelow > 220 || roomBelow > tip.rect.top ? { left, top: below, width: w, maxHeight: roomBelow - 8 } : { left, bottom: above, width: w, maxHeight: tip.rect.top - 14 };
+  return (
+    // Moving onto the pop-up keeps it open, so long rules can be scrolled.
+    <div className="rule-pop" role="tooltip" style={style} onMouseEnter={keep} onMouseLeave={hide} onClick={(e) => e.stopPropagation()}>
+      <strong>{tip.name}</strong>
+      {tip.x && <span className="rule-x"> · X = {tip.x}</span>}
+      <p>{tip.text}</p>
+    </div>
+  );
 }
 
 function StatTable({ rows, keys, first }: { rows: { name: string; stats: Record<string, string> }[]; keys: string[]; first: string }) {
@@ -132,7 +110,7 @@ function StatTable({ rows, keys, first }: { rows: { name: string; stats: Record<
             <tr key={r.name}>
               <th scope="row">{r.name}</th>
               {keys.map((k) => (
-                <td key={k}>{r.stats[k] ?? ''}</td>
+                <td key={k}>{k === 'Special Rules' ? <RuleList text={r.stats[k] ?? ''} /> : r.stats[k] ?? ''}</td>
               ))}
             </tr>
           ))}
@@ -146,12 +124,20 @@ function DatasheetDialog({ req, onClose }: { req: DatasheetRequest; onClose: () 
   const ref = useRef<HTMLDialogElement>(null);
   const [sheets, setSheets] = useState<Record<string, Datasheet> | null>(null);
   const [failed, setFailed] = useState(false);
+  const [glossary, setGlossary] = useState<Glossary>({});
+  const [tip, setTip] = useState<Tip | null>(null);
+  // Leaving a rule name hides the pop-up after a moment, unless the pointer moved onto it.
+  const hideTimer = useRef<number | undefined>(undefined);
+  const showTip = (t: Tip) => { window.clearTimeout(hideTimer.current); setTip(t); };
+  const hideTip = () => { window.clearTimeout(hideTimer.current); hideTimer.current = window.setTimeout(() => setTip(null), 150); };
+  const keepTip = () => window.clearTimeout(hideTimer.current);
   const def = unitDefs.get(req.unitId);
 
   useEffect(() => {
     const d = ref.current;
     if (d && !d.open) d.showModal();
     loadDatasheets().then(setSheets, () => setFailed(true));
+    loadGlossary().then(setGlossary, () => {});
   }, []);
 
   if (!def) return null;
@@ -198,7 +184,9 @@ function DatasheetDialog({ req, onClose }: { req: DatasheetRequest; onClose: () 
   const keysOf = (rows: { stats: Record<string, string> }[]) => [...new Set(rows.flatMap((r) => Object.keys(r.stats)))];
 
   return (
-    <dialog ref={ref} className="sheet" onClose={onClose} onClick={(e) => e.target === ref.current && ref.current?.close()} aria-labelledby="sheet-title">
+    <dialog ref={ref} className="sheet" onClose={onClose} onClick={(e) => { setTip(null); if (e.target === ref.current) ref.current?.close(); }} onScroll={() => setTip(null)} aria-labelledby="sheet-title">
+      <TipCtx.Provider value={{ glossary, show: showTip, hide: hideTip }}>
+      {tip && <RulePopup tip={tip} keep={keepTip} hide={hideTip} />}
       <div className="sheet-body">
         <header className="sheet-head">
           <div>
@@ -283,7 +271,7 @@ function DatasheetDialog({ req, onClose }: { req: DatasheetRequest; onClose: () 
                   {ruleRows.map((r) => (
                     <div key={r.name}>
                       <dt>
-                        {r.name}
+                        <RuleName name={r.name} />
                         {r.whenSelected && !req.inst && <span className="tag"> only if {r.whenSelected} is taken</span>}
                         {r.legions?.length ? <span className="tag"> {r.legions.join('/')} only</span> : null}
                       </dt>
@@ -325,6 +313,7 @@ function DatasheetDialog({ req, onClose }: { req: DatasheetRequest; onClose: () 
         </section>
         <p className="hint">Source: BSData {def.source.version}. Stats and points are for reference; check the book in a dispute.</p>
       </div>
+      </TipCtx.Provider>
     </dialog>
   );
 }
